@@ -1,0 +1,2600 @@
+
+                   6502 Macro Assembler   -   Version 4.00f 
+                Copyright (C) 1985 by 2500 A.D. Software, Inc.
+
+
+                         ***** Active Commands *****
+
+                           Ctrl S = Stop Output
+                           Ctrl Q = Start Output
+                           Esc  C = Stop Assembly
+                           Esc  T = Terminal Output
+                           Esc  P = Printer Output
+                           Esc  D = Disk Output
+                           Esc  M = Multiple Output
+                           Esc  N = No Output
+
+
+  Wed Jul 13 2011 11:29                                                                                                  Page    1
+
+
+
+
+
+
+
+               2500 A.D. 6502 Macro Assembler  -  Version 4.00f
+               ------------------------------------------------
+
+                       Input  Filename : jsm-col.asm
+                       Output Filename : jsm-col.obj
+
+
+    1                           ;Color Jet Set Miner compile
+    2                           
+    3          00D0             MODE           equ $d0
+    4                           
+    5          2800             codebase       equ $2800
+    6   27EA                                   org codebase-22
+    7                           
+    8                           ;****************************************
+    9                           ; Header for Atom emulator Wouter Ras
+   10   27EA   4A 53 4D 2D 43                    .db "JSM-COL         "
+        27EF   4F 4C 20 20 20 
+        27F4   20 20 20 20 20 
+        27F9   20 
+   11   27FA   0028                              .dw codebase
+   12   27FC   0028                              .dw codebase
+   13   27FE   CF13                              .dw eind_asm-start_asm
+   14                           ;****************************************
+   15   2800                    start_asm    
+   16   2800                                   include loader.inc
+   17          3A4E             load_pos   equ $3a4e
+   18          FB83             wait_fly   equ $fb83
+   19          FFE0             importdata equ $ffe0
+   20          032D             MAXLEVEL   equ $32d   ; LSB address of var L
+   21                           
+   22                           ;Linkadres game, clear break and start basic program at $2900
+   23                           
+   24   2800                    basicstart:
+   25   2800   A9 00                     lda #0
+   26   2802   8D 01 29                  sta $2901
+   27   2805   A9 29                     lda #$29
+   28   2807   85 12                     sta 18
+   29   2809   4C 86 CE                  jmp $ce86
+   30                           
+   31                           ;Entry if 4 levels are completed
+   32   280C                     
+   33   280C                    loadlev:
+   34   280C   AD 72 00                  lda LEVBLK       ; MAXLEVEL reached?
+   35   280F   CD 2D 03                  cmp MAXLEVEL
+   36   2812   D0 08                     bne copytext
+   37                           
+   38   2814   A9 00                     lda #0           ; If MAXLEVEL reached:
+   39   2816   8D 72 00                  sta LEVBLK       ; Load levelblock 0
+   40   2819   CE 71 00                  dec TIMEL        ; TIME = TIME-100
+   41                           
+   42                           copytext:                 ; Set Filenr after DAT.
+   43   281C   18                        clc
+   44   281D   69 30                     adc #$30
+   45   281F   8D 75 28                  sta filename+3
+   46                           
+   47   2822   A9 0C                     lda #12
+   48   2824   20 F4 FF                  jsr $fff4
+   49   2827   20 D1 F7                  jsr $f7d1
+   50   282A   4C 4F 41 44 49            .db 'LOADING '
+        282F   4E 47 20 
+   51   2832   EA                        nop
+   52   2833   A2 FF                     ldx #$ff
+   53   2835                    prt_name:
+   54   2835   E8                        inx
+   55   2836   BD 72 28                  lda filename,x
+   56   2839   20 F4 FF                  jsr $fff4
+   57   283C   C9 0D                     cmp #$0d
+   58   283E   D0 F5                     bne prt_name
+   59   2840                                      
+   60   2840   EE 72 00                  inc LEVBLK
+   61                           
+   62   2843   20 4F 28                  jsr loadfile
+   63                           
+   64   2846   20 81 FB                  jsr $fb81 ; Wait 0,5 sec
+   65   2849   A9 D0                     lda #MODE  ; Clear4
+   66   284B   8D 00 B0                  sta $B000
+   67   284E   60                        rts
+   68                           
+   69                           ;Load datafile DATx with tiles, sprites and leveldata
+   70                           
+   71   284F                    loadfile:
+   72   284F   A9 72                     lda #<filename
+   73   2851   8D 73 00                  sta tmp
+   74   2854   A9 28                     lda #>filename
+   75   2856   8D 74 00                  sta tmp+1          
+   76                           
+   77   2859   A9 4E                     lda #<load_pos
+   78   285B   8D 75 00                  sta tmp+2
+   79   285E   A9 3A                     lda #>load_pos
+   80   2860   8D 76 00                  sta tmp+3          
+   81                           
+   82   2863   A9 B2                     lda #$b2
+   83   2865   8D 77 00                  sta tmp+4
+   84   2868   A9 C2                     lda #$c2
+   85   286A   8D 78 00                  sta tmp+5
+   86                           
+   87   286D   A2 73                     ldx #tmp
+   88   286F   4C E0 FF                  jmp importdata
+   89                           
+   90   2872                    filename:
+   91   2872   44 41 54 78 0D           .db 'DATx',$0D
+   92                           
+   93   2900                                   org $2900
+   94   2900                                   include basic.inc
+   95   2900   0D               .db $0d
+   96   2901   00 0A 43 4C 45   .db  >10, <10,'CLEAR0;L=2;*N.',$0d
+        2906   41 52 30 3B 4C 
+        290B   3D 32 3B 2A 4E 
+        2910   2E 0D 
+   97   2912   00 14 50 2E 24   .db  >20, <20,'P.$30',$22,'         '
+        2917   33 30 22 20 20 
+        291C   20 20 20 20 20 
+        2921   20 20 
+   98   2923   6A 65 74 80 73   .db     $6a,$65,$74,$80,$73,$65,$74,$80,$6d,$69,$6e,$65,$72,$22
+        2928   65 74 80 6D 69 
+        292D   6E 65 72 22 
+   99   2931   27 0D            .db     $27,$0d
+  100   2933   00 1E 50 2E 27   .db  >30, <30,'P.',$27,$0d
+        2938   0D 
+  101   2939   00 28 50 2E 22   .db  >40, <40,'P.',$22,'    ORIGINAL BY TOM WALKER',$22,$27,$0d
+        293E   20 20 20 20 4F 
+        2943   52 49 47 49 4E 
+        2948   41 4C 20 42 59 
+        294D   20 54 4F 4D 20 
+        2952   57 41 4C 4B 45 
+        2957   52 22 27 0D 
+  102   295B   00 32 50 2E 22   .db  >50, <50,'P.',$22,' ATOM VERSION BY KEES VAN OSS',$22,$27,$0d
+        2960   20 41 54 4F 4D 
+        2965   20 56 45 52 53 
+        296A   49 4F 4E 20 42 
+        296F   59 20 4B 45 45 
+        2974   53 20 56 41 4E 
+        2979   20 4F 53 53 22 
+        297E   27 0D 
+  103   2980   00 3C 50 2E 27   .db  >60, <60,'P.',$27,$0d
+        2985   0D 
+  104   2986   00 46 50 2E 22   .db  >70, <70,'P.',$22,' COLLECT KEYS, AVOID WORMS AND',$22,$27,$0d
+        298B   20 43 4F 4C 4C 
+        2990   45 43 54 20 4B 
+        2995   45 59 53 2C 20 
+        299A   41 56 4F 49 44 
+        299F   20 57 4F 52 4D 
+        29A4   53 20 41 4E 44 
+        29A9   22 27 0D 
+  105   29AC   00 50 50 2E 22   .db  >80, <80,'P.',$22,'SPIKES AT ALL COSTS!! AND WATCH',$22,$27,$0d
+        29B1   53 50 49 4B 45 
+        29B6   53 20 41 54 20 
+        29BB   41 4C 4C 20 43 
+        29C0   4F 53 54 53 21 
+        29C5   21 20 41 4E 44 
+        29CA   20 57 41 54 43 
+        29CF   48 22 27 0D 
+  106   29D3   00 5A 50 2E 22   .db  >90, <90,'P.',$22,'THAT EVER DECREASING TIME LIMIT',$22,$27,$0d
+        29D8   54 48 41 54 20 
+        29DD   45 56 45 52 20 
+        29E2   44 45 43 52 45 
+        29E7   41 53 49 4E 47 
+        29EC   20 54 49 4D 45 
+        29F1   20 4C 49 4D 49 
+        29F6   54 22 27 0D 
+  107   29FA   00 64 50 2E 27   .db >100,<100,'P.',$27,$0d
+        29FF   0D 
+  108   2A00   00 6E 50 2E 22   .db >110,<110,'P.',$22,'             KEYS :',$22,$27,$0d
+        2A05   20 20 20 20 20 
+        2A0A   20 20 20 20 20 
+        2A0F   20 20 20 4B 45 
+        2A14   59 53 20 3A 22 
+        2A19   27 0D 
+  109   2A1B   00 78 50 2E 22   .db >120,<120,'P.',$22,'            Z - LEFT',$22,$27,$0d
+        2A20   20 20 20 20 20 
+        2A25   20 20 20 20 20 
+        2A2A   20 20 5A 20 2D 
+        2A2F   20 4C 45 46 54 
+        2A34   22 27 0D 
+  110   2A37   00 82 50 2E 22   .db >130,<130,'P.',$22,'            X - RIGHT',$22,$27,$0d
+        2A3C   20 20 20 20 20 
+        2A41   20 20 20 20 20 
+        2A46   20 20 58 20 2D 
+        2A4B   20 52 49 47 48 
+        2A50   54 22 27 0D 
+  111   2A54   00 8C 50 2E 22   .db >140,<140,'P.',$22,'        SHIFT - JUMP',$22,$27,$27,$0d
+        2A59   20 20 20 20 20 
+        2A5E   20 20 20 53 48 
+        2A63   49 46 54 20 2D 
+        2A68   20 4A 55 4D 50 
+        2A6D   22 27 27 0D 
+  112   2A71   00 96 50 2E 22   .db >150,<150,'P.',$22,'     PRESS SPACE TO START',$22,$0d
+        2A76   20 20 20 20 20 
+        2A7B   50 52 45 53 53 
+        2A80   20 53 50 41 43 
+        2A85   45 20 54 4F 20 
+        2A8A   53 54 41 52 54 
+        2A8F   22 0D 
+  113   2A91   00 A0 4C 49 2E   .db >160,<160,'LI.#FFE3;LI.#2AC0',$0d
+        2A96   23 46 46 45 33 
+        2A9B   3B 4C 49 2E 23 
+        2AA0   32 41 43 30 0D 
+  114   2AA5   FF               .db $ff
+  115                           
+  116                           
+  117   2AC0                                   org $2ac0
+  118   2AC0                                   include macros.inc
+  119                           PRTTEXT .MACRO text,xpos,ypos,length
+  120                                   lda #(xpos+<$8000)      ;X=11 Y=13
+  121                                   sta tmp
+  122                                   lda #(ypos+>$8000)
+  123                                   sta tmp+1
+  124                                   ldy #0
+  125                           
+  126                                   ldx #0       
+  127                           dotitl#
+  128                                   lda title,x      ;Title text is just bitmap saying 'PRESS FIRE'
+  129                                   sta (tmp),y
+  130                                   tya
+  131                                   clc
+  132                                   adc #$20
+  133                                   tay
+  134                                   bne noinc#
+  135                                   inc tmp 
+  136                           noinc#
+  137                                   inx
+  138                                   cpx #(length*8)
+  139                                   bne dotitl#
+  140                           .MACEND       
+  141                           
+  142                           PLOTSPRITE .MACRO nr,xpos,ypos
+  143                                   lda #nr       
+  144                                   ldx #xpos
+  145                                   ldy #ypos
+  146                                   jsr drawspr
+  147                           .MACEND
+  148                           
+  149   2AC0                                   include jsm.inc
+  150                           ;----------------------------------------------------------------------------------------
+  151                           ;JET SET MINER (formally PLAT 3064)
+  152                           ;
+  153                           ;Written by Tom Walker
+  154                           ;Original in 2003 (for Minigame 2003 4K competition) for C64
+  155                           ;BBC/Electron conversion in 2009
+  156                           ;Atom conversion in 2011 by Kees van Oss
+  157                           ;
+  158                           ;To be assembled with 65X02
+  159                           ;
+  160                           ;Tom Walker:
+  161                           ;I was 15 when I wrote this, so don't complain about the horrible coding
+  162                           ;This was written to fit in 4K, however some of the coding seems a bit 'big'
+  163                           ;Could probably be improved. If I'd made the more obvious size optimisations,
+  164                           ;it could have had twice as many levels as it does and still been 4K.
+  165                           ;
+  166                           ;The entire game has been made OS legal. This means it runs on any BBC or Electron
+  167                           ;with 32k of RAM. Older versions weren't OS legal, this meant they could run on
+  168                           ;a Model A.
+  169                           ;
+  170                           ;Suggestions for improvements :
+  171                           ;
+  172                           ; - More levels (obv). You could fit ~50 levels into an extra 4k.
+  173                           ; - Move enemies (would need an extra entry in the enemy tables, unless it's one
+  174                           ;   type per level)
+  175                           ; - More types of block per level. This would reduce the efficiency of the compression. 
+  176                           ; - Colour. Mode 5 should be easy, though some changes would be needed to collision
+  177                           ;   detection. Mode 1 or 2 would need more changes to the drawing routines
+  178                           ; - Sound. Should be fairly easy.
+  179                           ;
+  180                           ;Kees van Oss:
+  181                           ; The Atom version runs on an Atom with memory from #2900-#3C00 and does not need 
+  182                           ; any extra ROM or hardware. The code is not optimal due to 1 on 1 conversion.
+  183                           ; This version was send to RetroSoftware for a release on jan 18th 2011.
+  184                           ;
+  185                           ;Suggestions for improvements :
+  186                           ; - The sprite routine is not flickerfree
+  187                           ;----------------------------------------------------------------------------------------
+  188                           
+  189   2AC0                    gamedata:
+  190          FE71             SCANKEY  equ $FE71
+  191          FE66             WAITSYNC equ $FE66
+  192                           
+  193                           
+  194          0080             TMPVAR   equ $80
+  195          0090             VARS     equ $90 ; 
+  196                           
+  197                           ;Global game variables
+  198                           
+  199          0060             WORKSPC  equ $60        ; Available FP space $60-$7F
+  200          0060             PLX      equ WORKSPC    ;Player position
+  201          0061             PLY      equ WORKSPC+1
+  202          0062             PLF      equ WORKSPC+2  ;Player falling?
+  203          0063             PLD      equ WORKSPC+3  ;Direction player is facing
+  204          0064             PLJ      equ WORKSPC+4  ;Player jumping?
+  205          0065             KEYSLEFT equ WORKSPC+5  ;Number of keys left in level
+  206          0066             COLLIDE  equ WORKSPC+6  ;Collision detected?
+  207          0067             CHKCOL   equ WORKSPC+7  ;Check collisions when drawing sprites
+  208          0068             LEVEL    equ WORKSPC+8  ;Level number (0-3)
+  209          0069             DEAD     equ WORKSPC+9  ;Player dead?
+  210          006A             LEVCOMP  equ WORKSPC+10 ;Level completed?
+  211          006B             LIVES    equ WORKSPC+11 ;Player lives left
+  212          006C             LCOMP    equ WORKSPC+12 ;Current level (not limited to 0-3)
+  213          006D             VSYNCCNT equ WORKSPC+13 ;Vsync count
+  214          006E             LEVELOVR equ WORKSPC+14 ;Level over?
+  215          006F             TIME     equ WORKSPC+15 ;Time left (2)
+  216          0071             TIMEL    equ WORKSPC+17 ;Time limit for current round of levels
+  217          0072             LEVBLK   equ WORKSPC+18 ;Block nr of level loader (4 levels/block)
+  218                           
+  219                           ;Local vars in routines
+  220          0073             tmp      equ WORKSPC+19 ; (5)
+  221                           
+  222                           ;lev1     equ $400       ;Level data is decompressed to here
+  223                           ;ENMY     equ $900       ;Byte 0 - X pos  Byte 1 - Y pos  Byte 2 - X min  Byte 3 - X max  Byte 4 - d
+                            irection
+  224                           
+  225                           ;--- Main routine ----------------------------------------------------------------------
+  226                           
+  227   2AC0                    main:
+  228   2AC0   A9 00                    lda #0           ;Clear game variables
+  229   2AC2   A2 12                    ldx #18
+  230   2AC4   95 60            l1      sta WORKSPC,x
+  231   2AC6   CA                       dex
+  232   2AC7   10 FB                    bpl l1
+  233   2AC9                            
+  234   2AC9   20 EE 32                 jsr clear        ;Clear screen
+  235                           
+  236                           ;Set up title text
+  237   2ACC   A9 0B                    lda #<$8d0b      ;X=11 Y=13
+  238   2ACE   85 73                    sta tmp
+  239   2AD0   A9 8D                    lda #>$8d0b
+  240   2AD2   85 74                    sta tmp+1
+  241   2AD4   A0 00                    ldy #0
+  242                           
+  243   2AD6   A2 00                    ldx #0       
+  244   2AD8                    dotitl:
+  245   2AD8   BD B6 37                 lda title,x      ;Title text is just bitmap saying 'PRESS FIRE'
+  246   2ADB   91 73                    sta (tmp),y
+  247   2ADD   98                       tya
+  248   2ADE   18                       clc
+  249   2ADF   69 20                    adc #$20
+  250   2AE1   A8                       tay
+  251   2AE2   D0 02                    bne noinc
+  252   2AE4   E6 73                    inc tmp 
+  253   2AE6                    noinc:
+  254   2AE6   E8                       inx
+  255   2AE7   E0 50                    cpx #80
+  256   2AE9   D0 ED                    bne dotitl
+  257                           
+  258                           ;Draw player sprites on title screen
+  259   2AEB   A9 00                    lda #0       
+  260   2AED   A2 00                    ldx #0
+  261   2AEF   A0 00                    ldy #0
+  262   2AF1   20 D6 30                 jsr drawspr
+  263   2AF4   A9 00                    lda #0
+  264   2AF6   A2 12                    ldx #18
+  265   2AF8   A0 00                    ldy #0
+  266   2AFA   20 D6 30                 jsr drawspr
+  267   2AFD   A9 00                    lda #0
+  268   2AFF   A2 24                    ldx #36
+  269   2B01   A0 00                    ldy #0
+  270   2B03   20 D6 30                 jsr drawspr
+  271   2B06   A9 00                    lda #0
+  272   2B08   A2 36                    ldx #54
+  273   2B0A   A0 00                    ldy #0
+  274   2B0C   20 D6 30                 jsr drawspr
+  275                           
+  276   2B0F   A9 01                    lda #1
+  277   2B11   A2 F0                    ldx #240
+  278   2B13   A0 00                    ldy #0
+  279   2B15   20 D6 30                 jsr drawspr
+  280   2B18   A9 01                    lda #1
+  281   2B1A   A2 DE                    ldx #222
+  282   2B1C   A0 00                    ldy #0
+  283   2B1E   20 D6 30                 jsr drawspr
+  284   2B21   A9 01                    lda #1
+  285   2B23   A2 CC                    ldx #204
+  286   2B25   A0 00                    ldy #0
+  287   2B27   20 D6 30                 jsr drawspr
+  288   2B2A   A9 01                    lda #1
+  289   2B2C   A2 BA                    ldx #186
+  290   2B2E   A0 00                    ldy #0
+  291   2B30   20 D6 30                 jsr drawspr
+  292                           
+  293   2B33                    wait:
+  294   2B33   AD 01 B0                 lda $b001        ;Wait for 'SHIFT'
+  295   2B36   29 80                    and #$80
+  296   2B38   D0 F9                    bne wait
+  297                           
+  298                           ;Start game level 0
+  299   2B3A                    init:
+  300   2B3A   A9 00                    lda #0           ;Start on level 0
+  301   2B3C   85 68                    sta LEVEL
+  302   2B3E   85 6C                    sta LCOMP
+  303   2B40   85 72                    sta LEVBLK
+  304   2B42   20 0C 28                 jsr loadlev
+  305   2B45   A9 03                    lda #3           ;3 lives
+  306   2B47   85 6B                    sta LIVES
+  307   2B49   A9 09                    lda #9           ;Time starts at 999
+  308   2B4B   85 71                    sta TIMEL
+  309   2B4D                    dothelv:
+  310   2B4D   A9 00                    lda #0           ;Not dead!
+  311   2B4F   85 69                    sta DEAD
+  312   2B51   A9 99                    lda #$99         ;Set time to (TIMEL*100)+99
+  313   2B53   85 6F                    sta TIME
+  314   2B55   A5 71                    lda TIMEL
+  315   2B57   85 70                    sta TIME+1
+  316   2B59   85 6A                    sta LEVCOMP
+  317                           
+  318   2B5B   20 6F 2B                 jsr start        ;Run level
+  319                           
+  320   2B5E   C9 01                    cmp #1           ;Did we die?
+  321   2B60   F0 03                    beq dodie        ;Then jump to death code
+  322   2B62                    nxtlev:
+  323   2B62   4C 4D 2B                 jmp dothelv      ;Otherwise run next level
+  324                           
+  325   2B65   C6 6B            dodie:  dec LIVES        ;Decrease our lives
+  326   2B67   30 03                    bmi endgame      ;End the game if out
+  327   2B69   4C 62 2B                 jmp nxtlev       ;Otherwise start level again
+  328                           
+  329   2B6C                    endgame:
+  330   2B6C   4C C0 2A                 jmp main         ;Restart game if out of lives
+  331                           
+  332                           ;--- Start level ---
+  333                           
+  334   2B6F                    start:
+  335   2B6F   20 EE 32                 jsr clear        ;Clear screen
+  336                           
+  337   2B72   A9 00                    lda #0
+  338   2B74   85 6E                    sta LEVELOVR
+  339   2B76                            
+  340   2B76   A5 68                    lda LEVEL        ;Get level number
+  341   2B78   29 03                    and #3
+  342   2B7A   0A                       asl a
+  343   2B7B   0A                       asl a
+  344   2B7C   AA                       tax
+  345   2B7D   86 80                    stx TMPVAR
+  346   2B7F   BD 4F 3A                 lda levtab+1,x   ;Put address into X,Y
+  347   2B82   A8                       tay
+  348   2B83   BD 4E 3A                 lda levtab,x
+  349   2B86   AA                       tax
+  350   2B87   20 C7 31                 jsr decomp       ;And decompress
+  351                           
+  352   2B8A   A6 80                    ldx TMPVAR
+  353   2B8C   BD 51 3A                 lda levtab+3,x
+  354   2B8F   A8                       tay
+  355   2B90   BD 50 3A                 lda levtab+2,x
+  356   2B93   AA                       tax
+  357   2B94   20 AF 31                 jsr dolh         ;Copy level header to current level
+  358   2B97   20 21 2E                 jsr drawlev      ;Draw level
+  359                           
+  360   2B9A   20 FA 31                 jsr mkdispb      ;Make status text ('display bottom')
+  361                           
+  362   2B9D   A2 00                    ldx #0
+  363   2B9F                    enmyl1:
+  364   2B9F   BD 32 33                 lda levhead+10,x ;Copy enemy data from level header into enemy structure
+  365   2BA2   9D D0 28                 sta ENMY,x
+  366   2BA5   E8                       inx
+  367   2BA6   E0 14                    cpx #20
+  368   2BA8   D0 F5                    bne enmyl1
+  369                           
+  370   2BAA   A9 04                    lda #4           ;Reset number of keys left
+  371   2BAC   85 65                    sta KEYSLEFT
+  372   2BAE   A9 00                    lda #0
+  373   2BB0   85 66                    sta COLLIDE
+  374                           
+  375   2BB2   A2 08                    ldx #8           ;Player always starts in same position
+  376   2BB4   86 60                    stx PLX
+  377   2BB6   A0 88                    ldy #136
+  378   2BB8   84 61                    sty PLY
+  379   2BBA   A9 00                    lda #0           ;Neither dropping nor jumping
+  380   2BBC   85 63                    sta PLD
+  381   2BBE   85 64                    sta PLJ
+  382   2BC0   20 D6 30                 jsr drawspr      ;Place initial player sprite on screen (at X,Y)
+  383   2BC3                            
+  384   2BC3   AE D0 28                 ldx ENMY         ;Get first enemy coordinates
+  385   2BC6   AC D1 28                 ldy ENMY+1
+  386   2BC9   AD D4 28                 lda ENMY+4       ;Get enemy sprite number
+  387   2BCC   C9 FF                    cmp #$ff         ;Does enemy actually exist?
+  388   2BCE   F0 05                    beq en21         ;Jump if not
+  389   2BD0   09 02                    ora #2        
+  390   2BD2   20 D6 30                 jsr drawspr      ;Otherwise draw
+  391   2BD5                    en21:
+  392   2BD5   AE D5 28                 ldx ENMY+5       ;Repeat for other enemies (could do with a loop)
+  393   2BD8   AC D6 28                 ldy ENMY+6
+  394   2BDB   AD D9 28                 lda ENMY+9
+  395   2BDE   C9 FF                    cmp #$ff
+  396   2BE0   F0 05                    beq en31
+  397   2BE2   09 02                    ora #2
+  398   2BE4   20 D6 30                 jsr drawspr
+  399   2BE7                    en31:
+  400   2BE7   AE DA 28                 ldx ENMY+10
+  401   2BEA   AC DB 28                 ldy ENMY+11
+  402   2BED   AD DE 28                 lda ENMY+14
+  403   2BF0   C9 FF                    cmp #$ff
+  404   2BF2   F0 05                    beq en41
+  405   2BF4   09 02                    ora #2
+  406   2BF6   20 D6 30                 jsr drawspr
+  407   2BF9                    en41:
+  408   2BF9   AE DF 28                 ldx ENMY+15
+  409   2BFC   AC E0 28                 ldy ENMY+16
+  410   2BFF   AD E3 28                 lda ENMY+19
+  411   2C02   C9 FF                    cmp #$ff
+  412   2C04   F0 05                    beq en51
+  413   2C06   09 02                    ora #2
+  414   2C08   20 D6 30                 jsr drawspr
+  415   2C0B                    en51:
+  416   2C0B   A9 00                    lda #0           ;Disable collision detection
+  417   2C0D   85 67                    sta CHKCOL
+  418   2C0F                    loop:
+  419   2C0F   20 C0 2E                 jsr vsync        ;Wait 5 vsyncs (locks to 10 fps - fairly arbitary)
+  420   2C12   A5 63                    lda PLD
+  421   2C14   A6 60                    ldx PLX
+  422   2C16   A4 61                    ldy PLY
+  423   2C18   20 D6 30                 jsr drawspr      ;Erase player
+  424   2C1B   AE D0 28                 ldx ENMY
+  425   2C1E   AC D1 28                 ldy ENMY+1
+  426   2C21   AD D4 28                 lda ENMY+4
+  427   2C24   C9 FF                    cmp #$ff
+  428   2C26   F0 05                    beq en22
+  429   2C28   09 02                    ora #2
+  430   2C2A   20 D6 30                 jsr drawspr      ;Erase enemies
+  431   2C2D                    en22:
+  432   2C2D   AE D5 28                 ldx ENMY+5
+  433   2C30   AC D6 28                 ldy ENMY+6
+  434   2C33   AD D9 28                 lda ENMY+9
+  435   2C36   C9 FF                    cmp #$ff
+  436   2C38   F0 05                    beq en32
+  437   2C3A   09 02                    ora #2
+  438   2C3C   20 D6 30                 jsr drawspr
+  439   2C3F                    en32:
+  440   2C3F   AE DA 28                 ldx ENMY+10
+  441   2C42   AC DB 28                 ldy ENMY+11
+  442   2C45   AD DE 28                 lda ENMY+14
+  443   2C48   C9 FF                    cmp #$ff
+  444   2C4A   F0 05                    beq en42
+  445   2C4C   09 02                    ora #2
+  446   2C4E   20 D6 30                 jsr drawspr
+  447   2C51                    en42:
+  448   2C51   AE DF 28                 ldx ENMY+15
+  449   2C54   AC E0 28                 ldy ENMY+16
+  450   2C57   AD E3 28                 lda ENMY+19
+  451   2C5A   C9 FF                    cmp #$ff
+  452   2C5C   F0 05                    beq en52
+  453   2C5E   09 02                    ora #2
+  454   2C60   20 D6 30                 jsr drawspr
+  455   2C63                    en52:
+  456   2C63   20 18 2F                 jsr guymove     ;Check input and move player
+  457   2C66   20 76 2D                 jsr chkspk      ;See if we hit any spikes
+  458   2C69   20 D1 2D                 jsr doenemy     ;Move enemies
+  459   2C6C   A5 63                    lda PLD
+  460   2C6E   A6 60                    ldx PLX
+  461   2C70   A4 61                    ldy PLY
+  462   2C72   20 D6 30                 jsr drawspr     ;Draw player
+  463   2C75   A9 01                    lda #1          ;Re-enable collision detection
+  464   2C77   85 67                    sta CHKCOL
+  465   2C79   AE D0 28                 ldx ENMY        ;Draw enemies
+  466   2C7C   AC D1 28                 ldy ENMY+1
+  467   2C7F   AD D4 28                 lda ENMY+4
+  468   2C82   C9 FF                    cmp #$ff
+  469   2C84   F0 05                    beq en2
+  470   2C86   09 02                    ora #2
+  471   2C88   20 D6 30                 jsr drawspr
+  472   2C8B                    en2:
+  473   2C8B   AE D5 28                 ldx ENMY+5
+  474   2C8E   AC D6 28                 ldy ENMY+6
+  475   2C91   AD D9 28                 lda ENMY+9
+  476   2C94   C9 FF                    cmp #$ff
+  477   2C96   F0 05                    beq en3
+  478   2C98   09 02                    ora #2
+  479   2C9A   20 D6 30                 jsr drawspr
+  480   2C9D                    en3:
+  481   2C9D   AE DA 28                 ldx ENMY+10
+  482   2CA0   AC DB 28                 ldy ENMY+11
+  483   2CA3   AD DE 28                 lda ENMY+14
+  484   2CA6   C9 FF                    cmp #$ff
+  485   2CA8   F0 05                    beq en4
+  486   2CAA   09 02                    ora #2
+  487   2CAC   20 D6 30                 jsr drawspr
+  488   2CAF                    en4:
+  489   2CAF   AE DF 28                 ldx ENMY+15
+  490   2CB2   AC E0 28                 ldy ENMY+16
+  491   2CB5   AD E3 28                 lda ENMY+19
+  492   2CB8   C9 FF                    cmp #$ff
+  493   2CBA   F0 05                    beq en5
+  494   2CBC   09 02                    ora #2
+  495   2CBE   20 D6 30                 jsr drawspr
+  496   2CC1                    en5:
+  497   2CC1   A9 00                    lda #0          ;Disable collision detection
+  498   2CC3   85 67                    sta CHKCOL
+  499   2CC5   A5 66                    lda COLLIDE     ;And test results of previous checks
+  500   2CC7   D0 17                    bne die         ;Jump if a collision - ie monster collided with player
+  501   2CC9   20 E5 2C                 jsr chkover     ;Check if level completed
+  502   2CCC   A5 69                    lda DEAD        ;Redundant? die: should sort this
+  503   2CCE   D0 0F                    bne endital
+  504   2CD0   A5 6A                    lda LEVCOMP     ;If LEVCOMP=FF then we've completed the level, exit loop
+  505   2CD2   49 FF                    eor #$ff        ;This ensures A=0 when we exit
+  506   2CD4   F0 09                    beq endital
+  507   2CD6   20 6E 32                 jsr updb        ;Update status ('display bottom')
+  508   2CD9   20 D5 32                 jsr uptime      ;Update time
+  509   2CDC   4C 0F 2C                 jmp loop        ;Jump back to start
+  510                           
+  511   2CDF                    endital:
+  512   2CDF   60                       rts
+  513                           
+  514   2CE0                    die:
+  515   2CE0   A9 01                    lda #1          ;Set DEAD flag and return (A=1)
+  516   2CE2   85 69                    sta DEAD
+  517   2CE4   60                       rts
+  518                           
+  519   2CE5                    chkover:
+  520   2CE5   A5 6E                    lda LEVELOVR    ;If level is over
+  521   2CE7   D0 02                    bne nextlev     ;Then enter next one
+  522   2CE9   60                       rts
+  523                           
+  524   2CEA                    chkexit:
+  525   2CEA   60                       rts             ;Redundant - needed in C64 version
+  526                           
+  527   2CEB                    nextlev:
+  528   2CEB   A9 00                    lda #0          ;Reset completion flags
+  529   2CED   85 6E                    sta LEVELOVR
+  530   2CEF   A9 FF                    lda #$ff
+  531   2CF1   85 6A                    sta LEVCOMP
+  532   2CF3   F8                       sed
+  533   2CF4   A5 6C                    lda LCOMP       ;Increment level number (used in status display)
+  534   2CF6   18                       clc
+  535   2CF7   69 01                    adc #1
+  536   2CF9   85 6C                    sta LCOMP
+  537   2CFB   D8                       cld
+  538   2CFC   E6 68                    inc LEVEL       ;Increment actual level number (AND 3 cos there are 4 levels)
+  539   2CFE   A5 68                    lda LEVEL
+  540   2D00   29 03                    and #3
+  541                           ;       sta LEVEL
+  542   2D02   F0 01                    beq chgtime     ;If back to level 0 then we need to change the time limit
+  543   2D04   60                       rts
+  544                           
+  545   2D05                    chgtime:
+  546   2D05   20 0C 28                 jsr loadlev     ;load data
+  547   2D08   60                       rts             ;Decrease time limit
+  548                                                   ;No checks as when time gets to 099 no-one will be able to complete a level
+  549                           
+  550                           ;makexit - puts an exit in the level
+  551   2D09                    makexit:
+  552   2D09   AD 30 33                 lda levhead+8   ;Get exit position from level header
+  553   2D0C   85 86                    sta  TMPVAR+6
+  554   2D0E   AD 31 33                 lda levhead+9
+  555   2D11   18                       clc
+  556   2D12   69 80                    adc #$80
+  557   2D14   85 87                    sta TMPVAR+7
+  558   2D16                            
+  559   2D16   A0 00                    ldy #0
+  560   2D18   A2 00                    ldx #0          ;Copy top half of door sprite onto screen
+  561   2D1A                    l2:
+  562   2D1A   BD 2E 38                 lda doorspr,x
+  563   2D1D   91 86                    sta (TMPVAR+6),y
+  564   2D1F   E8                       inx
+  565   2D20   98                       tya
+  566   2D21   18                       clc
+  567   2D22   69 20                    adc #$20
+  568   2D24   A8                       tay
+  569   2D25   A5 87                    lda TMPVAR+7
+  570   2D27   69 00                    adc #0
+  571   2D29   85 87                    sta TMPVAR+7
+  572   2D2B   E0 10                    cpx #16
+  573   2D2D   D0 EB                    bne l2
+  574   2D2F                            
+  575   2D2F   E6 86                    inc TMPVAR+6    ;Move down one character line
+  576   2D31   C6 87                    dec TMPVAR+7
+  577   2D33   C6 87                    dec TMPVAR+7
+  578                           
+  579   2D35   A0 00                    ldy #0
+  580   2D37   A2 00                    ldx #0          ;And copy bottom half
+  581   2D39                    l3: 
+  582   2D39   BD 3E 38                 lda doorspr+16,x
+  583   2D3C   91 86                    sta (TMPVAR+6),y
+  584   2D3E   E8                       inx
+  585   2D3F   98                       tya
+  586   2D40   18                       clc
+  587   2D41   69 20                    adc #$20
+  588   2D43   A8                       tay
+  589   2D44   A5 87                    lda TMPVAR+7
+  590   2D46   69 00                    adc #0
+  591   2D48   85 87                    sta TMPVAR+7
+  592   2D4A   E0 10                    cpx #16
+  593   2D4C   D0 EB                    bne l3
+  594   2D4E                            
+  595   2D4E   AD 30 33                 lda levhead+8   ;Use door position to lookup level data
+  596   2D51   85 82                    sta TMPVAR+2
+  597   2D53   AD 31 33                 lda levhead+9
+  598   2D56   85 83                    sta TMPVAR+3
+  599   2D58   A9 00                    lda #0
+  600                           
+  601   2D5A   20 0A 33                 jsr savespc
+  602                           
+  603   2D5D   A4 82                    ldy TMPVAR+2
+  604   2D5F   A9 80                    lda #$80        ;Store $80 at locations door occupies
+  605   2D61   91 83                    sta (TMPVAR+3),y;Once all keys are gone, scanning rountine will see this as exit
+  606   2D63   C8                       iny
+  607   2D64   91 83                    sta (TMPVAR+3),y
+  608   2D66   A5 83                    lda TMPVAR+3
+  609   2D68   18                       clc
+  610   2D69   69 20                    adc #32
+  611   2D6B   85 83                    sta TMPVAR+3
+  612   2D6D   88                       dey
+  613   2D6E   A9 80                    lda #$80        
+  614   2D70   91 83                    sta (TMPVAR+3),y
+  615   2D72   C8                       iny
+  616   2D73   91 83                    sta (TMPVAR+3),y                
+  617                           
+  618   2D75   60                       rts
+  619                           
+  620   2D76                    chkspk:
+  621   2D76   A5 60                    lda PLX         ;Get player location
+  622   2D78   4A                       lsr a           ;And shift down to use as level index
+  623   2D79   4A                       lsr a
+  624   2D7A   4A                       lsr a
+  625   2D7B   AA                       tax
+  626   2D7C   A5 61                    lda PLY
+  627   2D7E   4A                       lsr a
+  628   2D7F   4A                       lsr a
+  629   2D80   4A                       lsr a
+  630   2D81   A8                       tay
+  631   2D82   86 8E                    stx TMPVAR+$e   ;Store
+  632   2D84   84 8F                    sty TMPVAR+$f
+  633   2D86   20 82 30                 jsr getblk1     ;Get block
+  634   2D89   C9 03                    cmp #3          ;Is is 3? (spike)
+  635   2D8B   F0 41                    beq hitspk      ;Jump if we hit
+  636   2D8D   A6 8E                    ldx TMPVAR+$e   ;Repeat for all surrounding blocks
+  637   2D8F   A4 8F                    ldy TMPVAR+$f
+  638   2D91   E8                       inx
+  639   2D92   20 82 30                 jsr getblk1
+  640   2D95   C9 03                    cmp #3
+  641   2D97   F0 35                    beq hitspk
+  642   2D99   A6 8E                    ldx TMPVAR+$e
+  643   2D9B   A4 8F                    ldy TMPVAR+$f
+  644   2D9D   C8                       iny
+  645   2D9E   20 82 30                 jsr getblk1
+  646   2DA1   C9 03                    cmp #3
+  647   2DA3   F0 29                    beq hitspk
+  648   2DA5   A6 8E                    ldx TMPVAR+$e
+  649   2DA7   A4 8F                    ldy TMPVAR+$f
+  650   2DA9   E8                       inx
+  651   2DAA   C8                       iny
+  652   2DAB   20 82 30                 jsr getblk1
+  653   2DAE   C9 03                    cmp #3
+  654   2DB0   F0 1C                    beq hitspk
+  655   2DB2   A6 8E                    ldx TMPVAR+$e
+  656   2DB4   A4 8F                    ldy TMPVAR+$f
+  657   2DB6   C8                       iny
+  658   2DB7   C8                       iny
+  659   2DB8   84 8F                    sty TMPVAR+$f
+  660   2DBA   20 82 30                 jsr getblk1
+  661   2DBD   C9 03                    cmp #3
+  662   2DBF   F0 0D                    beq hitspk
+  663   2DC1   A6 8E                    ldx TMPVAR+$e
+  664   2DC3   A4 8F                    ldy TMPVAR+$f
+  665   2DC5   E8                       inx
+  666   2DC6   20 82 30                 jsr getblk1
+  667   2DC9   C9 03                    cmp #3
+  668   2DCB   F0 01                    beq hitspk
+  669   2DCD   60                       rts
+  670                           
+  671   2DCE                    hitspk:
+  672   2DCE   4C E0 2C                 jmp die        ;If you hit a spike you die!
+  673                           
+  674   2DD1                    doenemy:
+  675   2DD1   A9 D0                    lda #<ENMY     ;Get enemy data address into $fe (for indirect Y mode)
+  676   2DD3   85 90                    sta VARS
+  677   2DD5   A9 28                    lda #>ENMY
+  678   2DD7   85 91                    sta VARS+1
+  679   2DD9   A2 00                    ldx #0
+  680   2DDB                    enmyl2:
+  681   2DDB   A0 04                    ldy #4         ;Get index 4 (direction)
+  682   2DDD   B1 90                    lda (VARS),y
+  683   2DDF   C9 FF                    cmp #$ff
+  684   2DE1   F0 31                    beq enmynxt    ;If $FF then enemy doesn't exist
+  685   2DE3   B1 90                    lda (VARS),y
+  686   2DE5   D0 18                    bne enemyl     ;If it's not 0 then it's left
+  687                           
+  688   2DE7                    enemyr:
+  689   2DE7   A0 00                    ldy #0         ;Else it's right
+  690   2DE9   B1 90                    lda (VARS),y   ;Get index 0 (X position)
+  691   2DEB   18                       clc
+  692   2DEC   69 02                    adc #2         ;Move him right
+  693   2DEE   91 90                    sta (VARS),y
+  694   2DF0   A0 03                    ldy #3         ;Get index 3 (rightmost position)
+  695   2DF2   D1 90                    cmp (VARS),y 
+  696   2DF4   D0 1E                    bne enmynxt    ;If enemy isn't there then jump
+  697   2DF6   A0 04                    ldy #4         ;Otherwise reverse direction
+  698   2DF8   A9 01                    lda #1
+  699   2DFA   91 90                    sta (VARS),y
+  700   2DFC   4C 14 2E                 jmp enmynxt
+  701                           
+  702   2DFF                    enemyl:
+  703   2DFF   A0 00                    ldy #0         ;Get index 0 (X position)
+  704   2E01   B1 90                    lda (VARS),y
+  705   2E03   38                       sec
+  706   2E04   E9 02                    sbc #2         ;Move him left
+  707   2E06   91 90                    sta (VARS),y
+  708   2E08   A0 02                    ldy #2         ;Get index 2 (leftmost position)
+  709   2E0A   D1 90                    cmp (VARS),y
+  710   2E0C   D0 06                    bne enmynxt    ;If enemy isn't there then jump
+  711   2E0E   A0 04                    ldy #4         ;Overwise reverse direction
+  712   2E10   A9 00                    lda #0
+  713   2E12   91 90                    sta (VARS),y
+  714                           
+  715   2E14                    enmynxt:
+  716   2E14   A5 90                    lda VARS       ;Move $FE pointer on 5 bytes (next enemy)
+  717   2E16   18                       clc
+  718   2E17   69 05                    adc #5
+  719   2E19   85 90                    sta VARS
+  720   2E1B   E8                       inx
+  721   2E1C   E0 05                    cpx #5        ;Are we at 20 (4 enemies * 5 bytes each)?
+  722   2E1E   D0 BB                    bne enmyl2     ;No, then jump to top of loop
+  723   2E20   60                       rts            ;Otherwise return
+  724                           
+  725   2E21                    drawlev:
+  726   2E21   A9 46                    lda #<lev1     ;Put level address into 2/3
+  727   2E23   85 82                    sta TMPVAR+2
+  728   2E25   A9 33                    lda #>lev1
+  729   2E27   85 83                    sta TMPVAR+3
+  730                           
+  731   2E29   A9 14                    lda #20        ;Number of rows to draw (20)
+  732   2E2B   85 88                    sta TMPVAR+8
+  733   2E2D   A9 80                    lda #$80       ;Starting screen address (4 columns from start of screen)
+  734   2E2F   85 85                    sta TMPVAR+5
+  735   2E31   A9 00                    lda #0
+  736   2E33   85 84                    sta TMPVAR+4
+  737                           
+  738   2E35                    drawvl:
+  739   2E35   A0 00                    ldy #0         ;Start at horizontal position 0
+  740   2E37                    drawhl:
+  741   2E37   B1 82                    lda (TMPVAR+2),y;Get tile number     
+  742                                                   ;(2) = map (6) = tile addr  (4) = screen addr
+  743   2E39   0A                         asl a         ;Multiply by 8, to use as an index into tiles
+  744   2E3A   0A                         asl a
+  745   2E3B   0A                         asl a
+  746   2E3C   18                         clc
+  747   2E3D   69 06                      adc #<tiles   ;Add tile address
+  748   2E3F   85 86                      sta TMPVAR+6
+  749   2E41   A9 00                      lda #0
+  750   2E43   69 38                      adc #>tiles
+  751   2E45   85 87                      sta TMPVAR+7
+  752                           
+  753   2E47   98                         tya
+  754   2E48   48                         pha
+  755   2E49   A2 07                      ldx #7
+  756   2E4B   86 8A                      stx TMPVAR+$A
+  757   2E4D   A4 8A            tileloop: ldy TMPVAR+$A 
+  758   2E4F   B1 86                      lda (TMPVAR+6),y     ;Copy tile (8 bytes, 8x8 pixels in mode 4)
+  759   2E51   BC 06 37                   ldy scrptr,x 
+  760   2E54   91 84                       sta (TMPVAR+4),y
+  761   2E56   CA                          dex
+  762   2E57   C6 8A                       dec TMPVAR+$A
+  763   2E59   A5 8A                       lda TMPVAR+$A
+  764   2E5B   10 F0                       bpl tileloop
+  765   2E5D                       
+  766   2E5D   68                         pla
+  767   2E5E   A8                         tay
+  768                           
+  769   2E5F   E6 84                      inc TMPVAR+4     ;Move screen address on 8
+  770                           
+  771   2E61   C8                         iny        ;We at end of row?
+  772   2E62   C0 20                      cpy #32
+  773   2E64   D0 D1                      bne drawhl ;Loop if not
+  774                           
+  775   2E66   E6 85                     inc TMPVAR+5     ;Move screen down a line and back 32 characters
+  776   2E68   A9 00                     lda #0
+  777   2E6A   85 84                     sta TMPVAR+4
+  778                           
+  779   2E6C   A5 82                     lda TMPVAR+2     ;Move level data address down a row
+  780   2E6E   18                        clc
+  781   2E6F   69 20                     adc #32
+  782   2E71   85 82                     sta TMPVAR+2
+  783   2E73   A5 83                     lda TMPVAR+3
+  784   2E75   69 00                     adc #0
+  785   2E77   85 83                     sta TMPVAR+3
+  786                           
+  787   2E79   C6 88                     dec TMPVAR+8      ;Decrease rows left count
+  788   2E7B   D0 B8                     bne drawvl ;and jump back
+  789                           
+  790                           ;Draw key sprites onto screen
+  791   2E7D   A0 00                    ldy #0 ;Start with key 0
+  792   2E7F                    keysprl:
+  793   2E7F   B9 28 33                 lda levhead,y ;Get location out of level header
+  794                           
+  795   2E82   85 86                    sta TMPVAR+6
+  796   2E84   B9 29 33                 lda levhead+1,y
+  797   2E87   18                       clc
+  798   2E88   69 80                    adc #$80
+  799   2E8A   85 87                    sta TMPVAR+7
+  800                           
+  801   2E8C   98                       tya
+  802   2E8D   48                       pha
+  803   2E8E                                    
+  804   2E8E   A0 00                    ldy #0
+  805   2E90   A2 00                    ldx #0       ;Copy key graphic (was a sprite on C64) onto screen
+  806   2E92   BD 26 38         l4      lda keyspr,x
+  807   2E95   91 86                    sta (TMPVAR+6),y
+  808   2E97   E8                       inx
+  809   2E98   98                       tya
+  810   2E99   18                       clc
+  811   2E9A   69 20                    adc #$20
+  812   2E9C   A8                       tay
+  813   2E9D   D0 F3                    bne l4 
+  814   2E9F                            
+  815   2E9F   68                       pla
+  816   2EA0   48                       pha
+  817   2EA1   A8                       tay
+  818   2EA2                            
+  819   2EA2   B9 28 33                 lda levhead,y   ;Get key location again
+  820   2EA5   85 82                    sta TMPVAR+2           ;and index into level data
+  821   2EA7   B9 29 33                 lda levhead+1,y
+  822   2EAA   85 83                    sta TMPVAR+3
+  823   2EAC   A9 00                    lda #0
+  824                           
+  825   2EAE   20 0A 33                 jsr savespc
+  826                           
+  827   2EB1   A4 82                    ldy TMPVAR+2
+  828   2EB3   A9 80                    lda #$80     ;$80 means key when there are still keys left
+  829   2EB5   91 83                    sta (TMPVAR+3),y
+  830   2EB7                            
+  831   2EB7   68                       pla
+  832   2EB8   A8                       tay
+  833   2EB9                                     
+  834   2EB9   C8                       iny          ;Increment key pointer
+  835   2EBA   C8                       iny
+  836   2EBB   C0 08                    cpy #8       ;At the end? (4 keys * 2 bytes each)
+  837   2EBD   D0 C0                    bne keysprl
+  838                           
+  839   2EBF   60                       rts
+  840                           
+  841                           
+  842   2EC0   20 66 FE         vsync:  jsr WAITSYNC
+  843   2EC3   E6 6D                    inc VSYNCCNT
+  844   2EC5   A5 6D                    lda VSYNCCNT
+  845   2EC7   C9 03                    cmp #3        ;Wait til vsync count >=5
+  846   2EC9   90 F5                    bcc vsync
+  847   2ECB   A9 00                    lda #0
+  848   2ECD   85 6D                    sta VSYNCCNT  ;Clear VSYNCCNT
+  849   2ECF   60                       rts
+  850                           
+  851   2ED0   A9 00            falldie: lda #0
+  852   2ED2   85 62                    sta PLF 
+  853   2ED4   4C E0 2C                 jmp die
+  854                           
+  855   2ED7   A5 60            guyfall: lda PLX     ;Update falling player
+  856   2ED9   4A                       lsr a         ;Get player position and shift down to block addresses
+  857   2EDA   4A                       lsr a
+  858   2EDB   4A                       lsr a
+  859   2EDC   AA                       tax
+  860   2EDD   A5 61                    lda PLY
+  861   2EDF   18                       clc
+  862   2EE0   69 17                    adc #16+7
+  863   2EE2   4A                       lsr a
+  864   2EE3   4A                       lsr a
+  865   2EE4   4A                       lsr a
+  866   2EE5   A8                       tay
+  867   2EE6   20 6B 30                 jsr getblk   ;Get blocks immediately below player
+  868   2EE9   D0 12                    bne stopf    ;If it's not air then stop falling
+  869   2EEB   E6 61                    inc PLY      ;Otherwise move player down
+  870   2EED   E6 61                    inc PLY
+  871   2EEF   E6 61                    inc PLY
+  872   2EF1   E6 61                    inc PLY
+  873   2EF3   E6 62                    inc PLF      ;Increase fall distance
+  874   2EF5   60                       rts
+  875                           
+  876   2EF6   A9 01            stfall:  lda #1      ;Start fall - set PLF flag to one 
+  877   2EF8   85 62                    sta PLF
+  878   2EFA   4C D7 2E                 jmp guyfall  ;then process fall
+  879                           
+  880   2EFD   A5 62            stopf:  lda PLF     ;Stop falling - see how far we've fallen
+  881   2EFF   C9 0C                    cmp #12     ;If we've fallen far enough (6 blocks)
+  882   2F01   B0 CD                    bcs falldie ;then kill player
+  883   2F03   A9 00                    lda #0      ;clear PLF flag
+  884   2F05   85 62                    sta PLF
+  885   2F07   A5 61                    lda PLY      ;Then adjust player Y so we're directly on a block
+  886   2F09   18                       clc
+  887   2F0A   69 07                    adc #7
+  888   2F0C   29 F8                    and #$F8
+  889   2F0E   85 61                    sta PLY
+  890   2F10   60                       rts
+  891                           
+  892   2F11   A9 07            startj:  lda #7      ;Start jump - set maximum upwards momentum in PLJ
+  893   2F13   85 64                    sta PLJ
+  894   2F15   4C CF 2F         guyjump: jmp guyj    ;Then process jump
+  895                           
+  896   2F18   A5 64            guymove: lda PLJ     ;Are we jumping?
+  897   2F1A   D0 F9                    bne guyjump  ;Then process jump
+  898   2F1C   A5 62                    lda PLF      ;Are we falling?
+  899   2F1E   D0 B7                    bne guyfall  ;Then process fall
+  900   2F20   A5 60                    lda PLX      ;Get player position
+  901   2F22   4A                       lsr a         ;Shift down to block numbers
+  902   2F23   4A                       lsr a
+  903   2F24   4A                       lsr a
+  904   2F25   AA                       tax
+  905   2F26   8E 40 03                 stx $340     ;And store
+  906   2F29   A5 61                    lda PLY
+  907   2F2B   18                       clc
+  908   2F2C   69 10                    adc #16      ;+16 - the block immediately under the player's feet
+  909   2F2E   4A                       lsr a
+  910   2F2F   4A                       lsr a
+  911   2F30   4A                       lsr a
+  912   2F31   A8                       tay
+  913   2F32   8C 41 03                 sty $341
+  914   2F35   20 6B 30                 jsr getblk   ;Check blocks immediately under player
+  915   2F38   F0 BC                    beq stfall   ;If it's just air then start falling
+  916                           
+  917   2F3A   A9 00                    lda #0
+  918   2F3C   85 0F                    sta $f
+  919   2F3E                            
+  920                                   ;Get Z and X keys
+  921                           ;        lda #$81
+  922                           ;        ldx #$9E ;'Z'
+  923                           ;        ldy #255
+  924                           ;       jsr OSBYTE ;If we get them now then player can't change direction during jump
+  925                           ;       cpx #255
+  926   2F3E   20 71 FE                 jsr SCANKEY
+  927   2F41   C0 3A                    cpy #$3a  ; 'Z'        
+  928   2F43   D0 04                    bne l5
+  929   2F45   A9 01                    lda #1
+  930   2F47   85 0F                    sta $f    ;Store for later
+  931                           
+  932   2F49                    l5
+  933                           ;        lda #$81
+  934                           ;        ldx #$BD ;'X'
+  935                           ;        ldy #255
+  936                           ;        jsr OSBYTE
+  937                           ;        cpx #255
+  938   2F49   20 71 FE                 jsr SCANKEY
+  939   2F4C   C0 38                    cpy #$38 ; 'X'
+  940   2F4E   D0 06                    bne l6
+  941   2F50   A5 0F                    lda $f
+  942   2F52   09 02                    ora #2
+  943   2F54   85 0F                    sta $f
+  944   2F56                            
+  945   2F56                    l6      
+  946                           ;        lda #$81
+  947                           ;        ldx #$B6     ;Check RETURN key
+  948                           ;        ldy #255
+  949                           ;        jsr OSBYTE
+  950                           ;        cpx #255
+  951   2F56   AD 01 B0                 lda $b001
+  952   2F59   29 80                    and #$80 ;'SHIFT'
+  953   2F5B   F0 B4                    beq startj  ;Start jumping if RETURN down
+  954   2F5D                            
+  955   2F5D   A5 0F            chkdir: lda $f
+  956   2F5F   29 01                    and #1 ;'Z'
+  957   2F61   D0 07                    bne guyleft ;Move left if Z held down
+  958   2F63                            
+  959   2F63   A5 0F                    lda $f
+  960   2F65   29 02                    and #2 ;'X'
+  961   2F67   D0 32                    bne guyright ;Move right if X held down
+  962                           
+  963   2F69   60                       rts
+  964                           
+  965   2F6A   C6 60            guyleft: dec PLX   ;Move player left
+  966   2F6C   C6 60                    dec PLX
+  967   2F6E   A9 01                    lda #1     ;Set direction to left (so player faces that direction)
+  968   2F70   85 63                    sta PLD
+  969   2F72   A5 60                    lda PLX    ;Shift coordinates down again
+  970   2F74   4A                       lsr a
+  971   2F75   4A                       lsr a
+  972   2F76   4A                       lsr a
+  973   2F77   AA                       tax
+  974   2F78   A5 61                    lda PLY
+  975   2F7A   4A                       lsr a
+  976   2F7B   4A                       lsr a
+  977   2F7C   4A                       lsr a
+  978   2F7D   A8                       tay
+  979   2F7E   86 75                    stx tmp+2     ;We now check blocks immediately to the left of player 
+  980   2F80   84 76                    sty tmp+3     ;to see if player could actually move that direction
+  981   2F82   20 82 30                 jsr getblk1 ;Check just one block
+  982   2F85   C9 02                    cmp #2      ;If it's a wall
+  983   2F87   F0 0D                    beq noleft  ;Then jump to move player back again
+  984   2F89   A6 75                    ldx tmp+2     ;Also check block below the one we just checked
+  985   2F8B   A4 76                    ldy tmp+3
+  986   2F8D   C8                       iny
+  987   2F8E   20 82 30                 jsr getblk1
+  988   2F91   C9 02                    cmp #2
+  989   2F93   F0 01                    beq noleft
+  990   2F95   60                       rts
+  991                           
+  992   2F96   E6 60            noleft:  inc PLX
+  993   2F98   E6 60                    inc PLX
+  994   2F9A   60                       rts
+  995                           
+  996   2F9B   E6 60            guyright: inc PLX   ;Much the same as above, just right instead of left!
+  997   2F9D   E6 60                    inc PLX
+  998   2F9F   A9 00                    lda #0
+  999   2FA1   85 63                    sta PLD
+ 1000   2FA3   A5 60                    lda PLX
+ 1001   2FA5   18                       clc         ;Player coordinates are the left half of the player, so
+ 1002   2FA6   69 08                    adc #8      ;we need add a block to get the block at his right      
+ 1003   2FA8   4A                       lsr a
+ 1004   2FA9   4A                       lsr a
+ 1005   2FAA   4A                       lsr a
+ 1006   2FAB   AA                       tax
+ 1007   2FAC   A5 61                    lda PLY
+ 1008   2FAE   4A                       lsr a
+ 1009   2FAF   4A                       lsr a
+ 1010   2FB0   4A                       lsr a
+ 1011   2FB1   A8                       tay
+ 1012   2FB2   86 75                    stx tmp+2
+ 1013   2FB4   84 76                    sty tmp+3
+ 1014   2FB6   20 82 30                 jsr getblk1
+ 1015   2FB9   C9 02                    cmp #2
+ 1016   2FBB   F0 0D                    beq noright
+ 1017   2FBD   A6 75                    ldx tmp+2
+ 1018   2FBF   A4 76                    ldy tmp+3
+ 1019   2FC1   C8                       iny
+ 1020   2FC2   20 82 30                 jsr getblk1
+ 1021   2FC5   C9 02                    cmp #2
+ 1022   2FC7   F0 01                    beq noright
+ 1023   2FC9   60                       rts
+ 1024                           
+ 1025   2FCA   C6 60            noright: dec PLX
+ 1026   2FCC   C6 60                    dec PLX
+ 1027   2FCE   60                       rts
+ 1028                           
+ 1029                           ;stopj4:  jmp stopj5  ;Branch instructions on 6502 are annoyingly limited
+ 1030                           ;Handle jumping
+ 1031   2FCF   A5 61            guyj:    lda PLY
+ 1032   2FD1   38                       sec          ;Subtract PLJ from PLY to move player up/down
+ 1033   2FD2   E5 64                    sbc PLJ      ;(PLJ can be negative, which is how the player moves down again)
+ 1034   2FD4   85 61                    sta PLY
+ 1035   2FD6   A6 64                    ldx PLJ      ;Update PLJ
+ 1036   2FD8   CA                       dex
+ 1037   2FD9   D0 01                    bne ndecj    ;Skip over 0, as PLJ=0 means not jumping!
+ 1038   2FDB   CA                       dex          ;move straight to -1 instead
+ 1039   2FDC   86 64            ndecj:   stx PLJ
+ 1040   2FDE   E0 F7                    cpx #$F7     ;Have we reached -8?
+ 1041   2FE0   F0 61                    beq stopj    ;Then stop jumping (player will probably start falling)
+ 1042                           ;        lda PLY      
+ 1043                           ;        cmp #200     ;Make sure player doesn't move off top or bottom of screen
+ 1044                           ;        bcs stopj4   ;Stop jump in that case
+ 1045   2FE2   20 5D 2F                 jsr chkdir   ;Keep player moving left/right
+ 1046   2FE5   A5 64                    lda PLJ      ;Need to check if we hit ceiling/floor
+ 1047   2FE7   10 15                    bpl chkc     ;Check jump sign to see which
+ 1048                           ;Check floor
+ 1049   2FE9   A5 60                    lda PLX      ;For floor we check immediately underneath player
+ 1050   2FEB   4A                       lsr a
+ 1051   2FEC   4A                       lsr a
+ 1052   2FED   4A                       lsr a
+ 1053   2FEE   AA                       tax
+ 1054   2FEF   A5 61                    lda PLY
+ 1055   2FF1   18                       clc
+ 1056   2FF2   69 17                    adc #16+7
+ 1057   2FF4   4A                       lsr a
+ 1058   2FF5   4A                       lsr a
+ 1059   2FF6   4A                       lsr a
+ 1060   2FF7   A8                       tay
+ 1061   2FF8   20 6B 30                 jsr getblk
+ 1062   2FFB   D0 25                    bne stopj2
+ 1063   2FFD   60                       rts
+ 1064                           ;Check ceiling
+ 1065   2FFE   A5 60            chkc:   lda PLX     ;For ceiling we check immediately above
+ 1066   3000   4A                       lsr a
+ 1067   3001   4A                       lsr a
+ 1068   3002   4A                       lsr a
+ 1069   3003   AA                       tax
+ 1070                           
+ 1071   3004   A5 61                    lda PLY
+ 1072   3006   4A                       lsr a
+ 1073   3007   4A                       lsr a
+ 1074   3008   4A                       lsr a
+ 1075   3009   A8                       tay
+ 1076   300A   86 75                    stx tmp+2
+ 1077   300C   84 76                    sty tmp+3
+ 1078   300E   20 82 30                 jsr getblk1
+ 1079   3011   C9 02                    cmp #2
+ 1080   3013   F0 3A                    beq stopj3
+ 1081   3015   A6 75                    ldx tmp+2
+ 1082   3017   E8                       inx
+ 1083   3018   A4 76                    ldy tmp+3
+ 1084   301A   20 82 30                 jsr getblk1
+ 1085   301D   C9 02                    cmp #2
+ 1086   301F   F0 2E                    beq stopj3
+ 1087   3021   60                       rts
+ 1088                           
+ 1089   3022   A5 61            stopj2: lda PLY      ;Stop jumping if we've hit floor
+ 1090   3024   29 F8                    and #$F8     ;Update player Y so he's immediately above the floor
+ 1091   3026   85 61                    sta PLY      ;(he could be partway through)
+ 1092   3028   A5 60                    lda PLX
+ 1093   302A   4A                       lsr a
+ 1094   302B   4A                       lsr a
+ 1095   302C   4A                       lsr a
+ 1096   302D   AA                       tax
+ 1097   302E   A5 61                    lda PLY
+ 1098   3030   18                       clc
+ 1099   3031   69 17                    adc #16+7
+ 1100   3033   4A                       lsr a
+ 1101   3034   4A                       lsr a
+ 1102   3035   4A                       lsr a
+ 1103   3036   A8                       tay
+ 1104   3037   20 6B 30                 jsr getblk  ;Not sure why we need to check this, I'm loathe to change it
+ 1105   303A   D0 07                    bne stopj
+ 1106   303C   A5 61                    lda PLY
+ 1107   303E   18                       clc
+ 1108   303F   69 04                    adc #4
+ 1109   3041   85 61                    sta PLY
+ 1110   3043   A9 00            stopj:  lda #0     ;Clear PLJ flag
+ 1111   3045   85 64                    sta PLJ
+ 1112   3047   60                       rts
+ 1113                           
+ 1114   3048   A9 00            stopj5: lda #0     ;Stop jumping if hit the top of the screen
+ 1115   304A   85 61                    sta PLY     ;Limit player to 0
+ 1116   304C   4C 43 30                 jmp stopj
+ 1117                           
+ 1118   304F   E6 64            stopj3: inc PLJ    ;Stop jumping if we hit ceiling
+ 1119   3051   A5 61                    lda PLY
+ 1120   3053   18                       clc
+ 1121   3054   65 64                    adc PLJ
+ 1122   3056   29 F8                    and #$F8    ;Make sure player isn't partway through the ceiling
+ 1123   3058   85 61                    sta PLY
+ 1124   305A   4C 43 30                 jmp stopj
+ 1125                           
+ 1126   305D   A9 00            blkzero: lda #0 ;Used if player jumps off the top of the screen
+ 1127   305F   E0 00                    cpx #0
+ 1128   3061   F0 05                    beq l7
+ 1129   3063   E0 1F                    cpx #31
+ 1130   3065   F0 01                    beq l7
+ 1131   3067   60                       rts     ;just returns empty air
+ 1132                           
+ 1133   3068   A9 02            l7      lda #2 ;But return a brick wall if about to jump off the edge
+ 1134   306A   60                       rts
+ 1135   306B                                    
+ 1136                           ;Return block number at block X,Y
+ 1137   306B   C0 14            getblk: cpy #20
+ 1138   306D   B0 EE                    bcs blkzero
+ 1139   306F   86 82                    stx TMPVAR+2 ;Actually this returns the block at X,Y ORed with X+1,Y 
+ 1140   3071   84 83                    sty TMPVAR+3  ;This is needed for ceiling/floor calculations
+ 1141   3073   A9 00                    lda #0 ;as player is 2 blocks wide
+ 1142                           
+ 1143   3075   20 0A 33                 jsr savespc
+ 1144                           
+ 1145   3078   A4 82                    ldy TMPVAR+2
+ 1146   307A   B1 83                    lda (TMPVAR+3),y
+ 1147   307C   C8                       iny
+ 1148   307D   11 83                    ora (TMPVAR+3),y
+ 1149   307F   29 7F                    and #$7f
+ 1150   3081   60                       rts
+ 1151                           
+ 1152                           ;Return block number at block X,Y
+ 1153   3082   C0 14            getblk1: cpy #20
+ 1154   3084   B0 D7                    bcs blkzero 
+ 1155   3086   86 82                    stx TMPVAR+2   ;This only checks 1 block
+ 1156   3088   84 83                    sty TMPVAR+3    ;But also checks for keys/exit at the same time
+ 1157   308A   86 75                    stx tmp+2
+ 1158   308C   84 77                    sty tmp+4
+ 1159   308E   A9 00                    lda #0
+ 1160                           
+ 1161   3090   20 0A 33                 jsr savespc
+ 1162                           
+ 1163   3093   A4 82                    ldy TMPVAR+2
+ 1164   3095   B1 83                    lda (TMPVAR+3),y
+ 1165   3097   30 08                    bmi gotkey ;If block number is negative then it's either key or door
+ 1166   3099                           
+ 1167   3099   60                       rts
+ 1168                           
+ 1169   309A   A9 01            setlo:  lda #1       ;Set level over flag
+ 1170   309C   85 6E                    sta LEVELOVR
+ 1171   309E   A9 00                    lda #0       ;Then return 0, for empty air
+ 1172   30A0   60                       rts
+ 1173   30A1                            
+ 1174   30A1   A5 65            gotkey: lda KEYSLEFT ;Do we have any keys left?
+ 1175   30A3   F0 F5                    beq setlo    ;If not then it's a door - set level over
+ 1176   30A5   A9 00                    lda #0       ;Else it's a key - remove it from the map
+ 1177   30A7   91 83                    sta (TMPVAR+3),y
+ 1178   30A9                            
+ 1179   30A9   85 76                    sta tmp+3      ;Remove it from the screen as well
+ 1180                           
+ 1181   30AB   A5 75                    lda tmp+2      ;This is just a repeat of the plotting code
+ 1182   30AD   85 86                    sta TMPVAR+6
+ 1183   30AF   A5 77                    lda tmp+4
+ 1184   30B1   18                       clc
+ 1185   30B2   69 80                    adc #$80
+ 1186   30B4   85 87                    sta TMPVAR+7
+ 1187   30B6                             
+ 1188   30B6   A0 00                    ldy #0
+ 1189   30B8   A2 00                    ldx #0       ;Copy key graphic (was a sprite on C64) onto screen
+ 1190   30BA   BD 26 38         l8      lda keyspr,x
+ 1191   30BD   51 86                    eor (TMPVAR+6),y
+ 1192   30BF   91 86                    sta (TMPVAR+6),y
+ 1193   30C1   E8                       inx
+ 1194   30C2   98                       tya
+ 1195   30C3   18                       clc
+ 1196   30C4   69 20                    adc #$20
+ 1197   30C6   A8                       tay
+ 1198   30C7   D0 F1                    bne l8 
+ 1199                           
+ 1200   30C9   C6 65                    dec KEYSLEFT  ;Decrease the key count
+ 1201   30CB   F0 03                    beq mkexit2   ;If that's the last key then put the door in place        
+ 1202   30CD                            
+ 1203   30CD   A9 00                    lda #0        ;Return empty air
+ 1204   30CF   60                       rts
+ 1205   30D0                            
+ 1206   30D0   20 09 2D         mkexit2: jsr makexit  ;Put exit on screen
+ 1207   30D3   A9 00                    lda #0        ;Return empty air
+ 1208   30D5   60                       rts
+ 1209   30D6                            
+ 1210                           
+ 1211                           
+ 1212                           
+ 1213                           ;Drawsprite routine
+ 1214                           ; A=spritenummer
+ 1215                           ;  x&7=0/1 -> subsprite 0
+ 1216                           ;  x&7=2/3 -> subsprite 1
+ 1217                           ;  x&7=4/5 -> subsprite 2
+ 1218                           ;  x&7=6/7 -> subsprite 3
+ 1219                           ;
+ 1220                           ;A=sprite num, X=X, Y=Y
+ 1221                           ; Spritedata    = $a/b
+ 1222                           ; Screenrowcount= $5
+ 1223                           ; Screenoffset  = $6/7
+ 1224                           ; Screenaddress = $8/9
+ 1225                           
+ 1226   30D6                    drawspr:
+ 1227   30D6   85 82                    sta TMPVAR+2
+ 1228   30D8   86 83                    stx TMPVAR+3
+ 1229   30DA   84 84                    sty TMPVAR+4
+ 1230                           
+ 1231                           ;Screen base spriteaddress = $8000 + y*$100 + X
+ 1232                           ;Calculate screenaddress $6/7
+ 1233   30DC   A5 83                    lda TMPVAR+3 
+ 1234   30DE   4A                       lsr a
+ 1235   30DF   4A                       lsr a
+ 1236   30E0   4A                       lsr a
+ 1237   30E1   85 86                    sta TMPVAR+6
+ 1238   30E3   A9 80                    lda #$80
+ 1239   30E5   85 87                    sta TMPVAR+7
+ 1240                           
+ 1241                           ;Set spriteline counter
+ 1242   30E7   98                       tya
+ 1243   30E8   AA                       tax
+ 1244   30E9   A9 0F                    lda #15
+ 1245   30EB   85 85                    sta TMPVAR+5
+ 1246                           
+ 1247                           ;Base spriteaddress = sprites + nr*128
+ 1248   30ED   A5 82                    lda TMPVAR+2         ;Get sprite start
+ 1249   30EF   85 8C                    sta TMPVAR+$C
+ 1250   30F1   A9 00                    lda #0
+ 1251   30F3   85 8D                    sta TMPVAR+$D
+ 1252   30F5   06 8C                    asl TMPVAR+$C       ;x2 - max 8
+ 1253   30F7   06 8C                    asl TMPVAR+$C       ;x4 - max 16
+ 1254   30F9   06 8C                    asl TMPVAR+$C       ;x8 - max 32
+ 1255   30FB   06 8C                    asl TMPVAR+$C       ;x16 - max 64
+ 1256   30FD   06 8C                    asl TMPVAR+$C       ;x32 - max 128
+ 1257   30FF   06 8C                    asl TMPVAR+$C       ;x64 - max 256
+ 1258   3101   26 8D                    rol TMPVAR+$D
+ 1259   3103   06 8C                    asl TMPVAR+$C       ;x128 - max 512
+ 1260   3105   26 8D                    rol TMPVAR+$D
+ 1261                           
+ 1262   3107   A5 8C                    lda TMPVAR+$C        ;Get full sprite address
+ 1263   3109   18                       clc
+ 1264   310A   69 4E                    adc #<sprites
+ 1265   310C   85 8A                    sta TMPVAR+$A         ;And put in $A/$B
+ 1266   310E   A5 8D                    lda TMPVAR+$D
+ 1267   3110   69 38                    adc #>sprites
+ 1268   3112   85 8B                    sta TMPVAR+$B
+ 1269                           
+ 1270                           ;Add x%6 *32 to get subsprite
+ 1271   3114   A5 83                    lda TMPVAR+3         ;Sprites are preshifted, 4 based on X position
+ 1272   3116   29 06                    and #6        ;so get index to correct one
+ 1273   3118   0A                       asl a
+ 1274   3119   0A                       asl a
+ 1275   311A   0A                       asl a
+ 1276   311B   0A                       asl a
+ 1277   311C   18                       clc
+ 1278   311D   65 8A                    adc TMPVAR+$A
+ 1279   311F   85 8A                    sta TMPVAR+$A
+ 1280   3121   A5 8B                    lda TMPVAR+$B
+ 1281   3123   69 00                    adc #0
+ 1282   3125   85 8B                    sta TMPVAR+$B
+ 1283                           
+ 1284   3127   A5 67                    lda CHKCOL   ;Do we need to check collisions?
+ 1285   3129   D0 35                    bne spryl2   ;Yes, then jump to collision detecting loop
+ 1286                           
+ 1287   312B                    spryl:
+ 1288   312B   E0 C8                    cpx #200     ;Don't draw row if it's off the screen 
+ 1289   312D   B0 1E                    bcs skipdraw1
+ 1290                           
+ 1291   312F   BD C6 35                 lda ytab1,x  ;Otherwise normal loop
+ 1292   3132   18                       clc          ;Get address through Y tables
+ 1293   3133   65 86                    adc TMPVAR+6
+ 1294   3135   85 88                    sta TMPVAR+8
+ 1295   3137   BD 66 36                 lda ytab2,x
+ 1296   313A   65 87                    adc TMPVAR+7
+ 1297   313C   85 89                    sta TMPVAR+9
+ 1298                           
+ 1299   313E   A0 00                    ldy #0
+ 1300   3140   B1 8A                    lda (TMPVAR+$a),y   ;Get sprite data
+ 1301   3142   51 88                    eor (TMPVAR+$8),y   ;EOR with what's on screen
+ 1302   3144   91 88                    sta (TMPVAR+$8),y   ;And story
+ 1303   3146   C8                       iny
+ 1304   3147   B1 8A                    lda (TMPVAR+$a),y   ;Get second byte of sprite data for this row
+ 1305   3149   51 88                    eor (TMPVAR+$8),y   ;and EOR and store
+ 1306   314B   91 88                    sta (TMPVAR+$8),y
+ 1307                           
+ 1308   314D                    skipdraw1:
+ 1309   314D   A5 8A                    lda TMPVAR+$a       ;Update sprite address
+ 1310   314F   18                       clc
+ 1311   3150   69 02                    adc #2
+ 1312   3152   85 8A                    sta TMPVAR+$a
+ 1313   3154   A5 8B                    lda TMPVAR+$b
+ 1314   3156   69 00                    adc #0
+ 1315   3158   85 8B                    sta TMPVAR+$b
+ 1316   315A   E8                       inx
+ 1317   315B   C6 85                    dec TMPVAR+5       ;Decrease row count
+ 1318   315D   10 CC                    bpl spryl   ;And loop
+ 1319                           
+ 1320   315F   60                       rts
+ 1321                           
+ 1322   3160   E0 C8            spryl2: cpx #200     ;Don't draw row if it's off the screen 
+ 1323   3162   B0 2A                    bcs skipdraw2
+ 1324   3164   BD C6 35                 lda ytab1,x ;Get address through Y table
+ 1325   3167   18                       clc
+ 1326   3168   65 86                    adc TMPVAR+6
+ 1327   316A   85 88                    sta TMPVAR+8
+ 1328   316C   BD 66 36                 lda ytab2,x
+ 1329   316F   65 87                    adc TMPVAR+7
+ 1330   3171   85 89                    sta TMPVAR+9
+ 1331                           
+ 1332   3173   A0 00                    ldy #0
+ 1333                           
+ 1334   3175   B1 8A                    lda (TMPVAR+$a),y  ;Get sprite data
+ 1335   3177   31 88                    and (TMPVAR+$8),y  ;AND with screen data
+ 1336   3179   D0 26                    bne coll    ;Jump if not 0 (if not 0 then collision!)
+ 1337   317B                    donecol:
+ 1338   317B   B1 8A                    lda (TMPVAR+$a),y ;Plot as normal
+ 1339   317D   51 88                    eor (TMPVAR+$8),y
+ 1340   317F   91 88                    sta (TMPVAR+$8),y
+ 1341   3181   C8                       iny
+ 1342                           
+ 1343   3182   B1 8A                    lda (TMPVAR+$a),y  ;Collision again
+ 1344   3184   31 88                    and (TMPVAR+$8),y
+ 1345   3186   D0 20                    bne coll2
+ 1346                           
+ 1347   3188   B1 8A            doncol: lda (TMPVAR+$a),y  ;And plot again
+ 1348   318A   51 88                    eor (TMPVAR+$8),y
+ 1349   318C   91 88                    sta (TMPVAR+$8),y
+ 1350   318E                    skipdraw2:
+ 1351   318E   A5 8A                    lda TMPVAR+$a      ;Update address
+ 1352   3190   18                       clc
+ 1353   3191   69 02                    adc #2
+ 1354   3193   85 8A                    sta TMPVAR+$a
+ 1355   3195   A5 8B                    lda TMPVAR+$b
+ 1356   3197   69 00                    adc #0
+ 1357   3199   85 8B                    sta TMPVAR+$b
+ 1358   319B   E8                       inx
+ 1359   319C   C6 85                    dec TMPVAR+5
+ 1360   319E   10 C0                    bpl spryl2
+ 1361                           
+ 1362   31A0   60                       rts
+ 1363                           
+ 1364   31A1   A9 01            coll:   lda #1      ;Set collision flag
+ 1365   31A3   85 66                    sta COLLIDE
+ 1366   31A5   4C 7B 31                 jmp donecol
+ 1367                           
+ 1368   31A8   A9 01            coll2:  lda #1      ;Two of these loops, so it can continue at the right point
+ 1369   31AA   85 66                    sta COLLIDE
+ 1370   31AC   4C 88 31                 jmp doncol
+ 1371                           
+ 1372                           
+ 1373                           
+ 1374   31AF   86 86            dolh:   stx TMPVAR+6          ;Copy level header pointed to by X/Y
+ 1375   31B1   84 87                    sty TMPVAR+7          ;to levhead
+ 1376   31B3   A9 28                    lda #<levhead
+ 1377   31B5   85 84                    sta TMPVAR+4
+ 1378   31B7   A9 33                    lda #>levhead
+ 1379   31B9   85 85                    sta TMPVAR+5
+ 1380   31BB   A0 00                    ldy #0
+ 1381   31BD   B1 86            headl:  lda (TMPVAR+6),y
+ 1382   31BF   91 84                    sta (TMPVAR+4),y
+ 1383   31C1   C8                       iny
+ 1384   31C2   C0 1E                    cpy #30        ;It's 30 bytes
+ 1385   31C4   D0 F7                    bne headl
+ 1386   31C6   60                       rts
+ 1387   31C7                            
+ 1388                           ;Level decompression
+ 1389   31C7   A9 46            decomp: lda #<lev1     ;Get normal level address
+ 1390   31C9   85 84                    sta TMPVAR+4
+ 1391   31CB   A9 33                    lda #>lev1
+ 1392   31CD   85 85                    sta TMPVAR+5
+ 1393   31CF   86 86                    stx TMPVAR+6          ;Store compressed level address (X/Y)
+ 1394   31D1   84 87                    sty TMPVAR+7
+ 1395   31D3   A0 00                    ldy #0
+ 1396                           
+ 1397   31D5   B1 86            deloop: lda (TMPVAR+6),y      ;Get next byte
+ 1398   31D7   C9 FF                    cmp #$ff       ;If $FF then end of level data
+ 1399   31D9   F0 1E                    beq deend
+ 1400   31DB   85 88                    sta TMPVAR+8        ;Save
+ 1401   31DD   4A                       lsr a
+ 1402   31DE   4A                       lsr a
+ 1403   31DF   AA                       tax            ;Get run length number (top 6 bits)
+ 1404   31E0   A5 88                    lda TMPVAR+8
+ 1405   31E2   29 03                    and #3         ;Get tile number
+ 1406   31E4                            
+ 1407   31E4   E6 86                    inc TMPVAR+6          ;Increase source address
+ 1408   31E6   D0 02                    bne nodinc2
+ 1409   31E8   E6 87                    inc TMPVAR+7
+ 1410   31EA   EA               nodinc2: nop
+ 1411   31EB   91 84            dewloop: sta (TMPVAR+4),y     ;Store tile
+ 1412   31ED   E6 84                    inc TMPVAR+4          ;Increase dest address
+ 1413   31EF   D0 02                    bne nodeinc
+ 1414   31F1   E6 85                    inc TMPVAR+5
+ 1415   31F3   CA               nodeinc: dex           ;Decrease run length count
+ 1416   31F4   D0 F5                    bne dewloop    ;and loop
+ 1417   31F6   4C D5 31                 jmp deloop     ;Byte over - jump to start of loop
+ 1418                           
+ 1419   31F9   60               deend:  rts
+ 1420                           
+ 1421                           ;Make status display (why did I call it 'display bottom'?)
+ 1422   31FA                    mkdispb:
+ 1423   31FA   A9 00                    lda #<$9600
+ 1424   31FC   85 73                    sta tmp
+ 1425   31FE   A9 96                    lda #>$9600
+ 1426   3200   85 74                    sta tmp+1
+ 1427   3202   A0 00                    ldy #0
+ 1428   3204   A2 00                    ldx #0
+ 1429   3206                    mkdbl:
+ 1430   3206   BD 5E 37                 lda dispbot,x ;Copy 'LIVES' text
+ 1431   3209   91 73                    sta (tmp),y
+ 1432   320B   98                       tya
+ 1433   320C   18                       clc
+ 1434   320D   69 20                    adc #$20
+ 1435   320F   A8                       tay
+ 1436   3210   D0 02                    bne noinc2
+ 1437   3212   E6 73                    inc tmp
+ 1438   3214                    noinc2:
+ 1439   3214   E8                       inx
+ 1440   3215   E0 30                    cpx #48
+ 1441   3217   D0 ED                    bne mkdbl
+ 1442                           
+ 1443   3219   A9 0D                    lda #<$960d
+ 1444   321B   85 73                    sta tmp
+ 1445   321D   A9 96                    lda #>$960d
+ 1446   321F   85 74                    sta tmp+1
+ 1447   3221   A0 00                    ldy #0
+ 1448   3223   A2 00                    ldx #0
+ 1449   3225                    mkdbl3:
+ 1450   3225   BD 8E 37                 lda timedb,x  ;Copy 'TIME' text
+ 1451   3228   91 73                    sta (tmp),y
+ 1452   322A   98                       tya
+ 1453   322B   18                       clc
+ 1454   322C   69 20                    adc #$20
+ 1455   322E   A8                       tay
+ 1456   322F   D0 02                    bne noinc3
+ 1457   3231   E6 73                    inc tmp
+ 1458   3233                    noinc3:
+ 1459   3233   E8                       inx
+ 1460   3234   E0 28                    cpx #40
+ 1461   3236   D0 ED                    bne mkdbl3
+ 1462                           
+ 1463   3238   A9 10                    lda #$10
+ 1464   323A   A2 00                    ldx #0
+ 1465   323C   60                       rts
+ 1466                           
+ 1467                           ;enddat:  .BYTE $A,$D,$C,$D,$A,$E,$F,$FF
+ 1468                           
+ 1469                           
+ 1470                           
+ 1471                           ;Draw a number on the status bar
+ 1472   323D                    dodbnum:
+ 1473   323D   0A                       asl a ;Multiply number by 8
+ 1474   323E   0A                       asl a
+ 1475   323F   0A                       asl a
+ 1476   3240   18                       clc   ;for character address lookup
+ 1477   3241   69 0E                    adc #<livenum
+ 1478   3243   85 84                    sta TMPVAR+4
+ 1479   3245   A9 37                    lda #>livenum
+ 1480   3247   69 00                    adc #0
+ 1481   3249   85 85                    sta TMPVAR+5 ;Character source now in 4/5
+ 1482                           
+ 1483   324B   A2 00                    ldx #0
+ 1484   324D   A0 00                    ldy #0
+ 1485   324F                    updbl1:
+ 1486   324F   B1 84                    lda (TMPVAR+4),y  ;Copy character across
+ 1487   3251   91 88                    sta (TMPVAR+8),y
+ 1488   3253   E6 84                    inc TMPVAR+4
+ 1489   3255   A5 84                    lda TMPVAR+4
+ 1490   3257   D0 02                    bne goon1
+ 1491   3259   E6 85                    inc TMPVAR+5
+ 1492   325B                    goon1:
+ 1493   325B   A5 88                    lda TMPVAR+8
+ 1494   325D   18                       clc
+ 1495   325E   69 20                    adc #$20
+ 1496   3260   85 88                    sta TMPVAR+8
+ 1497   3262   A5 89                    lda TMPVAR+9
+ 1498   3264   69 00                    adc #0
+ 1499   3266   85 89                    sta TMPVAR+9
+ 1500   3268   E8                       inx
+ 1501   3269   E0 08                    cpx #8      ;8 bytes
+ 1502   326B   D0 E2                    bne updbl1
+ 1503   326D   60                       rts
+ 1504                           
+ 1505                           ;Update status bar
+ 1506   326E   A5 6B            updb:   lda LIVES  ;Lives first (1 digit only)
+ 1507   3270   A2 96                    ldx #$96   ;Store screen address ($7A90)
+ 1508   3272   86 89                    stx TMPVAR+$9
+ 1509   3274   A2 06                    ldx #$06
+ 1510   3276   86 88                    stx TMPVAR+$8
+ 1511   3278   20 3D 32                 jsr dodbnum ;And display number
+ 1512                           
+ 1513   327B   A5 6F                    lda TIME   ;First (last on the display) digit of time
+ 1514   327D   29 0F                    and #$f
+ 1515   327F   A2 96                    ldx #$96   ;Address is $7B20
+ 1516   3281   86 89                    stx TMPVAR+$9
+ 1517   3283   A2 14                    ldx #$14
+ 1518   3285   86 88                    stx TMPVAR+$8
+ 1519   3287   20 3D 32                 jsr dodbnum ;And display
+ 1520                           
+ 1521   328A   A5 6F                    lda TIME   ;Middle digit now
+ 1522   328C   4A                       lsr  a      ;Shift to get it
+ 1523   328D   4A                       lsr a
+ 1524   328E   4A                       lsr a
+ 1525   328F   4A                       lsr a
+ 1526   3290   A2 96                    ldx #$96   ;Address is $7B18 
+ 1527   3292   86 89                    stx TMPVAR+$9
+ 1528   3294   A2 13                    ldx #$13
+ 1529   3296   86 88                    stx TMPVAR+$8
+ 1530   3298   20 3D 32                 jsr dodbnum ;And display
+ 1531                           
+ 1532   329B   A5 70                    lda TIME+1 ;And finally last digit (first on display)
+ 1533   329D   29 0F                    and #$f
+ 1534   329F   A2 96                    ldx #$96   ;Address is $7B10
+ 1535   32A1   86 89                    stx TMPVAR+$9
+ 1536   32A3   A2 12                    ldx #$12
+ 1537   32A5   86 88                    stx TMPVAR+$8
+ 1538   32A7   20 3D 32                 jsr dodbnum ;And display
+ 1539                           
+ 1540   32AA   A5 6C                    lda LCOMP  ;Now level number
+ 1541   32AC   F8                       sed        ;Add 1, so level numbers aren't 0 based anymore
+ 1542   32AD   18                       clc
+ 1543   32AE   69 01                    adc #1
+ 1544   32B0   D8                       cld
+ 1545   32B1   29 0F                    and #$f
+ 1546   32B3   A2 96                    ldx #$96   ;Address $7B58
+ 1547   32B5   86 89                    stx TMPVAR+$9
+ 1548   32B7   A2 1F                    ldx #$1f
+ 1549   32B9   86 88                    stx TMPVAR+$8
+ 1550   32BB   20 3D 32                 jsr dodbnum ;And display
+ 1551                           
+ 1552   32BE   A5 6C                    lda LCOMP  ;Other digit (you decide if it's first or last)
+ 1553   32C0   F8                       sed        ;Add 1, so level numbers aren't 0 based anymore
+ 1554   32C1   18                       clc
+ 1555   32C2   69 01                    adc #1
+ 1556   32C4   D8                       cld
+ 1557   32C5   4A                       lsr a
+ 1558   32C6   4A                       lsr a
+ 1559   32C7   4A                       lsr a
+ 1560   32C8   4A                       lsr a
+ 1561   32C9   A2 96                    ldx #$96  ;Address $7B50   
+ 1562   32CB   86 89                    stx TMPVAR+$9
+ 1563   32CD   A2 1E                    ldx #$1e
+ 1564   32CF   86 88                    stx TMPVAR+$8
+ 1565   32D1   20 3D 32                 jsr dodbnum ;And display
+ 1566                           
+ 1567   32D4   60                       rts 
+ 1568                           
+ 1569   32D5   F8               uptime: sed         ;Update time - use BCD decimal mode
+ 1570   32D6   A5 6F                    lda TIME
+ 1571   32D8   38                       sec
+ 1572   32D9   E9 01                    sbc #1      ;Subtract 1 from time
+ 1573   32DB   85 6F                    sta TIME
+ 1574   32DD   A5 70                    lda TIME+1  ;Then update second byte
+ 1575   32DF   E9 00                    sbc #0
+ 1576   32E1   85 70                    sta TIME+1
+ 1577   32E3   D8                       cld
+ 1578   32E4   A5 6F                    lda TIME    ;Is time = 000?
+ 1579   32E6   05 70                    ora TIME+1
+ 1580   32E8   F0 01                    beq timeup  ;Then time's up so kill the player
+ 1581   32EA   60                       rts
+ 1582                           
+ 1583   32EB   4C E0 2C         timeup: jmp die
+ 1584                           
+ 1585                           ;===============================================
+ 1586                           ; clear
+ 1587                           ;-----------------------------------------------
+ 1588                           ; - Switch to mode4
+ 1589                           ; - Clear screen
+ 1590                           ;===============================================
+ 1591                           
+ 1592   32EE                    clear:  
+ 1593   32EE   A9 D0                    lda #MODE  ; Clear4
+ 1594   32F0   8D 00 B0                 sta $B000
+ 1595                           
+ 1596   32F3   A9 80                    lda #$80
+ 1597   32F5   85 74                    sta tmp+1
+ 1598   32F7   A9 00                    lda #0       ;Clear the screen - this is _not_ small
+ 1599   32F9   85 73                    sta tmp
+ 1600   32FB   A8                       tay
+ 1601   32FC                    clrloop:
+ 1602   32FC   91 73                    sta (tmp),y
+ 1603   32FE   C8                       iny
+ 1604   32FF   D0 FB                    bne clrloop
+ 1605   3301   E6 74                    inc tmp+1
+ 1606   3303   A6 74                    ldx tmp+1
+ 1607   3305   E0 98                    cpx #$98
+ 1608   3307   D0 F3                    bne clrloop
+ 1609                           
+ 1610   3309   60                       rts
+ 1611                           ;-----------------------------------------------
+ 1612                           
+ 1613   330A                    savespc:
+ 1614   330A   85 84                    sta TMPVAR+4
+ 1615   330C   06 83                    asl TMPVAR+3    ;x2 - max 40
+ 1616   330E   06 83                    asl TMPVAR+3    ;x4 - max 80
+ 1617   3310   06 83                    asl TMPVAR+3    ;x8 - max 160
+ 1618   3312   06 83                    asl TMPVAR+3    ;x16 - max 320
+ 1619   3314   26 84                    rol TMPVAR+4
+ 1620   3316   06 83                    asl TMPVAR+3    ;x32 - max 640
+ 1621   3318   26 84                    rol TMPVAR+4
+ 1622   331A   A5 83                    lda TMPVAR+3
+ 1623   331C   18                       clc
+ 1624   331D   69 46                    adc #<lev1
+ 1625   331F   85 83                    sta TMPVAR+3
+ 1626   3321   A5 84                    lda TMPVAR+4
+ 1627   3323   69 33                    adc #>lev1
+ 1628   3325   85 84                    sta TMPVAR+4
+ 1629   3327   60                       rts
+ 1630                           
+ 1631          28D0             ENMY:   equ $28D0
+ 1632                           ;        .db 0,0,0,0,0
+ 1633                           ;        .db 0,0,0,0,0
+ 1634                           ;        .db 0,0,0,0,0
+ 1635                           ;        .db 0,0,0,0,0
+ 1636                           ;        .db 0,0,0,0,0
+ 1637                           
+ 1638                           ;Level header
+ 1639                           ;This is replaced with whatever level is being played
+ 1640   3328   0F 00 01 10 0B   levhead: .byte 15,0,1,16,11,2,30,16 ;These are the 4 keys, alternating X,Y locations
+        332D   02 1E 10 
+ 1641   3330   01 11                    .byte 1,17                  ;Door location
+ 1642                           
+ 1643   3332   70 88 70 EE 00           .byte 112,136,112,238,0     ;Enemies - initial X, initial Y, leftmost X, 
+ 1644   3337   A0 00 A0 EE 00           .byte 160,0,160,238,0       ;rightmost X, starting direction (0=left, 1=right)
+ 1645   333C   A0 10 A0 EE 00           .byte 160,16,160,238,0
+ 1646   3341   A0 20 A0 EE 00           .byte 160,32,160,238,0
+ 1647   3346                    lev1:
+ 1648   3346                            .blkb 640
+ 1649                           
+ 1650                           
+ 1651   35C6                                   include scrtab.inc
+ 1652                           ;Screen Y lookup table - low bytes first
+ 1653   35C6   00 20 40 60 80   ytab1:  .BYTE $00,$20,$40,$60,$80,$a0,$c0,$e0,$00,$20,$40,$60,$80,$a0,$c0,$e0
+        35CB   A0 C0 E0 00 20 
+        35D0   40 60 80 A0 C0 
+        35D5   E0 
+ 1654   35D6   00 20 40 60 80           .BYTE $00,$20,$40,$60,$80,$a0,$c0,$e0,$00,$20,$40,$60,$80,$a0,$c0,$e0
+        35DB   A0 C0 E0 00 20 
+        35E0   40 60 80 A0 C0 
+        35E5   E0 
+ 1655   35E6   00 20 40 60 80           .BYTE $00,$20,$40,$60,$80,$a0,$c0,$e0,$00,$20,$40,$60,$80,$a0,$c0,$e0
+        35EB   A0 C0 E0 00 20 
+        35F0   40 60 80 A0 C0 
+        35F5   E0 
+ 1656   35F6   00 20 40 60 80           .BYTE $00,$20,$40,$60,$80,$a0,$c0,$e0,$00,$20,$40,$60,$80,$a0,$c0,$e0
+        35FB   A0 C0 E0 00 20 
+        3600   40 60 80 A0 C0 
+        3605   E0 
+ 1657   3606   00 20 40 60 80           .BYTE $00,$20,$40,$60,$80,$a0,$c0,$e0,$00,$20,$40,$60,$80,$a0,$c0,$e0
+        360B   A0 C0 E0 00 20 
+        3610   40 60 80 A0 C0 
+        3615   E0 
+ 1658   3616   00 20 40 60 80           .BYTE $00,$20,$40,$60,$80,$a0,$c0,$e0,$00,$20,$40,$60,$80,$a0,$c0,$e0
+        361B   A0 C0 E0 00 20 
+        3620   40 60 80 A0 C0 
+        3625   E0 
+ 1659   3626   00 20 40 60 80           .BYTE $00,$20,$40,$60,$80,$a0,$c0,$e0,$00,$20,$40,$60,$80,$a0,$c0,$e0
+        362B   A0 C0 E0 00 20 
+        3630   40 60 80 A0 C0 
+        3635   E0 
+ 1660   3636   00 20 40 60 80           .BYTE $00,$20,$40,$60,$80,$a0,$c0,$e0,$00,$20,$40,$60,$80,$a0,$c0,$e0
+        363B   A0 C0 E0 00 20 
+        3640   40 60 80 A0 C0 
+        3645   E0 
+ 1661   3646   00 20 40 60 80           .BYTE $00,$20,$40,$60,$80,$a0,$c0,$e0,$00,$20,$40,$60,$80,$a0,$c0,$e0
+        364B   A0 C0 E0 00 20 
+        3650   40 60 80 A0 C0 
+        3655   E0 
+ 1662   3656   00 20 40 60 80           .BYTE $00,$20,$40,$60,$80,$a0,$c0,$e0,$00,$20,$40,$60,$80,$a0,$c0,$e0
+        365B   A0 C0 E0 00 20 
+        3660   40 60 80 A0 C0 
+        3665   E0 
+ 1663                           
+ 1664                           ;Then high bytes
+ 1665   3666   00 00 00 00 00   ytab2:  .BYTE $00,$00,$00,$00,$00,$00,$00,$00,$01,$01,$01,$01,$01,$01,$01,$01
+        366B   00 00 00 01 01 
+        3670   01 01 01 01 01 
+        3675   01 
+ 1666   3676   02 02 02 02 02           .BYTE $02,$02,$02,$02,$02,$02,$02,$02,$03,$03,$03,$03,$03,$03,$03,$03
+        367B   02 02 02 03 03 
+        3680   03 03 03 03 03 
+        3685   03 
+ 1667   3686   04 04 04 04 04           .BYTE $04,$04,$04,$04,$04,$04,$04,$04,$05,$05,$05,$05,$05,$05,$05,$05
+        368B   04 04 04 05 05 
+        3690   05 05 05 05 05 
+        3695   05 
+ 1668   3696   06 06 06 06 06           .BYTE $06,$06,$06,$06,$06,$06,$06,$06,$07,$07,$07,$07,$07,$07,$07,$07
+        369B   06 06 06 07 07 
+        36A0   07 07 07 07 07 
+        36A5   07 
+ 1669   36A6   08 08 08 08 08           .BYTE $08,$08,$08,$08,$08,$08,$08,$08,$09,$09,$09,$09,$09,$09,$09,$09
+        36AB   08 08 08 09 09 
+        36B0   09 09 09 09 09 
+        36B5   09 
+ 1670   36B6   0A 0A 0A 0A 0A           .BYTE $0a,$0a,$0a,$0a,$0a,$0a,$0a,$0a,$0b,$0b,$0b,$0b,$0b,$0b,$0b,$0b
+        36BB   0A 0A 0A 0B 0B 
+        36C0   0B 0B 0B 0B 0B 
+        36C5   0B 
+ 1671   36C6   0C 0C 0C 0C 0C           .BYTE $0c,$0c,$0c,$0c,$0c,$0c,$0c,$0c,$0d,$0d,$0d,$0d,$0d,$0d,$0d,$0d
+        36CB   0C 0C 0C 0D 0D 
+        36D0   0D 0D 0D 0D 0D 
+        36D5   0D 
+ 1672   36D6   0E 0E 0E 0E 0E           .BYTE $0e,$0e,$0e,$0e,$0e,$0e,$0e,$0e,$0f,$0f,$0f,$0f,$0f,$0f,$0f,$0f
+        36DB   0E 0E 0E 0F 0F 
+        36E0   0F 0F 0F 0F 0F 
+        36E5   0F 
+ 1673   36E6   10 10 10 10 10           .BYTE $10,$10,$10,$10,$10,$10,$10,$10,$11,$11,$11,$11,$11,$11,$11,$11
+        36EB   10 10 10 11 11 
+        36F0   11 11 11 11 11 
+        36F5   11 
+ 1674   36F6   12 12 12 12 12           .BYTE $12,$12,$12,$12,$12,$12,$12,$12,$13,$13,$13,$13,$13,$13,$13,$13
+        36FB   12 12 12 13 13 
+        3700   13 13 13 13 13 
+        3705   13 
+ 1675                           
+ 1676   3706   00 20 40 60 80   scrptr: .BYTE $00,$20,$40,$60,$80,$A0,$C0,$e0
+        370B   A0 C0 E0 
+ 1677                           
+ 1678   370E                                   include cfont.inc
+ 1679                           ;COLOR VERSION
+ 1680                           
+ 1681   370E                    livenum:
+ 1682   370E   1C 73 73 73 73   .db $1c,$73,$73,$73,$73,$73,$1C,$00 ;0
+        3713   73 1C 00 
+ 1683   3716   7C 1C 1C 1C 1C   .db $7c,$1c,$1c,$1c,$1c,$1c,$1C,$00 ;1
+        371B   1C 1C 00 
+ 1684   371E   7C 07 07 7C 70   .db $7c,$07,$07,$7c,$70,$70,$7F,$00 ;2
+        3723   70 7F 00 
+ 1685   3726   7C 03 03 7C 03   .db $7c,$03,$03,$7c,$03,$03,$7c,$00 ;3
+        372B   03 7C 00 
+ 1686   372E   07 1F 73 73 73   .db $07,$1f,$73,$73,$73,$7F,$07,$00 ;4
+        3733   7F 07 00 
+ 1687   3736   7F 70 70 7C 03   .db $7F,$70,$70,$7c,$03,$03,$7c,$00 ;5
+        373B   03 7C 00 
+ 1688   373E   07 1C 70 7C 73   .db $07,$1c,$70,$7c,$73,$73,$1c,$00 ;6
+        3743   73 1C 00 
+ 1689   3746   7F 03 03 0C 0C   .db $7F,$03,$03,$0C,$0C,$70,$70,$00 ;7
+        374B   70 70 00 
+ 1690   374E   1C 73 73 1C 73   .db $1c,$73,$73,$1c,$73,$73,$1c,$00 ;8
+        3753   73 1C 00 
+ 1691   3756   1C 73 73 7F 07   .db $1c,$73,$73,$7F,$07,$1c,$70,$00 ;9
+        375B   1C 70 00 
+ 1692                           
+ 1693                           
+ 1694   375E                    dispbot:
+ 1695   375E   70 70 70 70 70   .db $70,$70,$70,$70,$70,$70,$7F,$00 ;L
+        3763   70 7F 00 
+ 1696   3766   1C 1C 1C 1C 1C   .db $1C,$1C,$1C,$1C,$1C,$1C,$1C,$00 ;I
+        376B   1C 1C 00 
+ 1697   376E   73 73 73 73 73   .db $73,$73,$73,$73,$73,$73,$1c,$00 ;V
+        3773   73 1C 00 
+ 1698   3776   7F 70 70 7F 70   .db $7F,$70,$70,$7F,$70,$70,$7F,$00 ;E
+        377B   70 7F 00 
+ 1699   377E   7F 70 70 7F 03   .db $7f,$70,$70,$7f,$03,$03,$7f,$00 ;S
+        3783   03 7F 00 
+ 1700   3786   00 1C 1C 00 00   .db $00,$1c,$1c,$00,$00,$1c,$1c,$00 ;:
+        378B   1C 1C 00 
+ 1701                           
+ 1702   378E                    timedb:
+ 1703   378E   7F 1C 1C 1C 1C   .db $7F,$1C,$1C,$1C,$1C,$1C,$1C,$00 ;T
+        3793   1C 1C 00 
+ 1704   3796   1C 1C 1C 1C 1C   .db $1C,$1C,$1C,$1C,$1C,$1C,$1C,$00 ;I
+        379B   1C 1C 00 
+ 1705   379E   73 7F 7F 73 73   .db $73,$7f,$7f,$73,$73,$73,$73,$00 ;M
+        37A3   73 73 00 
+ 1706   37A6   7F 70 70 7F 70   .db $7F,$70,$70,$7F,$70,$70,$7F,$00 ;E
+        37AB   70 7F 00 
+ 1707   37AE   00 1C 1C 00 00   .db $00,$1c,$1c,$00,$00,$1c,$1c,$00 ;:
+        37B3   1C 1C 00 
+ 1708                           
+ 1709   37B6                    title:
+ 1710   37B6   7C 73 73 7C 70   .db $7c,$73,$73,$7c,$70,$70,$70,$00 ;P
+        37BB   70 70 00 
+ 1711   37BE   7C 73 73 7C 73   .db $7c,$73,$73,$7c,$73,$73,$73,$00 ;R
+        37C3   73 73 00 
+ 1712   37C6   7F 70 70 7F 70   .db $7F,$70,$70,$7F,$70,$70,$7F,$00 ;E
+        37CB   70 7F 00 
+ 1713   37CE   7F 70 70 7F 03   .db $7f,$70,$70,$7f,$03,$03,$7f,$00 ;S
+        37D3   03 7F 00 
+ 1714   37D6   7F 70 70 7F 03   .db $7f,$70,$70,$7f,$03,$03,$7f,$00 ;S
+        37DB   03 7F 00 
+ 1715   37DE   00 00 00 00 00   .db $00,$00,$00,$00,$00,$00,$00,$00 ; space
+        37E3   00 00 00 
+ 1716   37E6   7F 70 70 7F 70   .db $7F,$70,$70,$7F,$70,$70,$70,$00 ;F
+        37EB   70 70 00 
+ 1717   37EE   1C 1C 1C 1C 1C   .db $1C,$1C,$1C,$1C,$1C,$1C,$1C,$00 ;I
+        37F3   1C 1C 00 
+ 1718   37F6   7C 73 73 7C 73   .db $7c,$73,$73,$7c,$73,$73,$73,$00 ;P
+        37FB   73 73 00 
+ 1719   37FE   7F 70 70 7F 70   .db $7F,$70,$70,$7F,$70,$70,$7F,$00 ;E
+        3803   70 7F 00 
+ 1720                           
+ 1721   3806                                   include ctiles.inc
+ 1722                           ;COLOR VERSION
+ 1723                           
+ 1724   3806                    tiles:
+ 1725   3806   00                       .BYTE %00000000      ;Tiles - all 8x8 1 bit per pixel, so easy to change!
+ 1726   3807   00                       .BYTE %00000000      ;This one is air
+ 1727   3808   00                       .BYTE %00000000
+ 1728   3809   00                       .BYTE %00000000
+ 1729   380A   00                       .BYTE %00000000
+ 1730   380B   00                       .BYTE %00000000
+ 1731   380C   00                       .BYTE %00000000
+ 1732   380D   00                       .BYTE %00000000
+ 1733                           
+ 1734   380E   FF                       .BYTE %11111111      ;Floor that can be walked and jumped through
+ 1735   380F   EE                       .BYTE %11101110
+ 1736   3810   BB                       .BYTE %10111011
+ 1737   3811   EE                       .BYTE %11101110
+ 1738   3812   BB                       .BYTE %10111011
+ 1739   3813   EE                       .BYTE %11101110
+ 1740   3814   BB                       .BYTE %10111011
+ 1741   3815   EE                       .BYTE %11101110
+ 1742                           
+ 1743   3816   FD                       .BYTE %11111101      ;Brick wall
+ 1744   3817   FD                       .BYTE %11111101
+ 1745   3818   FD                       .BYTE %11111101
+ 1746   3819   55                       .BYTE %01010101
+ 1747   381A   7F                       .BYTE %01111111
+ 1748   381B   7F                       .BYTE %01111111
+ 1749   381C   7F                       .BYTE %01111111
+ 1750   381D   55                       .BYTE %01010101
+ 1751                           
+ 1752   381E   00                       .BYTE %00000000      ;Spike
+ 1753   381F   10                       .BYTE %00010000
+ 1754   3820   10                       .BYTE %00010000
+ 1755   3821   11                       .BYTE %00010001
+ 1756   3822   15                       .BYTE %00010101
+ 1757   3823   55                       .BYTE %01010101
+ 1758   3824   55                       .BYTE %01010101
+ 1759   3825   55                       .BYTE %01010101
+ 1760                           
+ 1761   3826   24               keyspr: .BYTE %00100100  ;Key sprite - 8x8, 1 bit per pixel
+ 1762   3827   91                       .BYTE %10010001
+ 1763   3828   91                       .BYTE %10010001
+ 1764   3829   24                       .BYTE %00100100
+ 1765   382A   24                       .BYTE %00100100
+ 1766   382B   94                       .BYTE %10010100
+ 1767   382C   24                       .BYTE %00100100
+ 1768   382D   94                       .BYTE %10010100
+ 1769                           
+ 1770   382E   DB               doorspr:.BYTE %11011011   ;Door sprite - 16x16, 1 bit per pixel
+ 1771   382F   B6                       .BYTE %10110110   ;This is stored in screen format (ie 4 8x8 chunks)
+ 1772   3830   6D                       .BYTE %01101101
+ 1773   3831   DB                       .BYTE %11011011
+ 1774   3832   B6                       .BYTE %10110110
+ 1775   3833   6D                       .BYTE %01101101
+ 1776   3834   DB                       .BYTE %11011011
+ 1777   3835   B6                       .BYTE %10110110
+ 1778   3836                            
+ 1779   3836   6D                       .BYTE %01101101
+ 1780   3837   DB                       .BYTE %11011011
+ 1781   3838   B6                       .BYTE %10110110
+ 1782   3839   6D                       .BYTE %01101101
+ 1783   383A   DB                       .BYTE %11011011
+ 1784   383B   B6                       .BYTE %10110110
+ 1785   383C   6D                       .BYTE %01101101
+ 1786   383D   DB                       .BYTE %11011011
+ 1787                           
+ 1788   383E   6D                       .BYTE %01101101
+ 1789   383F   DB                       .BYTE %11011011
+ 1790   3840   B6                       .BYTE %10110110
+ 1791   3841   6D                       .BYTE %01101101
+ 1792   3842   DB                       .BYTE %11011011
+ 1793   3843   B6                       .BYTE %10110110
+ 1794   3844   6D                       .BYTE %01101101
+ 1795   3845   DB                       .BYTE %11011011
+ 1796   3846                            
+ 1797   3846   B6                       .BYTE %10110110
+ 1798   3847   6D                       .BYTE %01101101
+ 1799   3848   DB                       .BYTE %11011011
+ 1800   3849   B6                       .BYTE %10110110
+ 1801   384A   6D                       .BYTE %01101101
+ 1802   384B   DB                       .BYTE %11011011
+ 1803   384C   B6                       .BYTE %10110110
+ 1804   384D   6D                       .BYTE %01101101
+ 1805                           
+ 1806                           
+ 1807   384E                                   include csprites.inc
+ 1808                           ;COLOR VERSION
+ 1809                           
+ 1810                           ;Sprite data - 16x16, 1 bit per pixel
+ 1811   384E                    sprites: 
+ 1812   384E   00 00            .BYTE %00000000,%00000000 ;Player right
+ 1813   3850   00 00            .BYTE %00000000,%00000000
+ 1814   3852   3C 00            .BYTE %00111100,%00000000
+ 1815   3854   34 00            .BYTE %00110100,%00000000
+ 1816   3856   38 00            .BYTE %00111000,%00000000
+ 1817   3858   35 00            .BYTE %00110101,%00000000
+ 1818   385A   14 00            .BYTE %00010100,%00000000
+ 1819   385C   08 00            .BYTE %00001000,%00000000
+ 1820   385E   2A 00            .BYTE %00101010,%00000000
+ 1821   3860   AA 00            .BYTE %10101010,%00000000
+ 1822   3862   AA 00            .BYTE %10101010,%00000000
+ 1823   3864   7D 00            .BYTE %01111101,%00000000
+ 1824   3866   3C 00            .BYTE %00111100,%00000000
+ 1825   3868   33 00            .BYTE %00110011,%00000000
+ 1826   386A   22 00            .BYTE %00100010,%00000000
+ 1827   386C   2A 80            .BYTE %00101010,%10000000
+ 1828                           
+ 1829   386E   00 00            .BYTE %00000000,%00000000
+ 1830   3870   03 C0            .BYTE %00000011,%11000000
+ 1831   3872   03 40            .BYTE %00000011,%01000000
+ 1832   3874   03 80            .BYTE %00000011,%10000000
+ 1833   3876   03 50            .BYTE %00000011,%01010000
+ 1834   3878   01 40            .BYTE %00000001,%01000000
+ 1835   387A   02 00            .BYTE %00000010,%00000000
+ 1836   387C   0A 80            .BYTE %00001010,%10000000
+ 1837   387E   0A 80            .BYTE %00001010,%10000000
+ 1838   3880   0A 80            .BYTE %00001010,%10000000
+ 1839   3882   0A 80            .BYTE %00001010,%10000000
+ 1840   3884   09 80            .BYTE %00001001,%10000000
+ 1841   3886   0F C0            .BYTE %00001111,%11000000
+ 1842   3888   03 00            .BYTE %00000011,%00000000
+ 1843   388A   02 00            .BYTE %00000010,%00000000
+ 1844   388C   02 80            .BYTE %00000010,%10000000
+ 1845                           
+ 1846   388E   00 00            .BYTE %00000000,%00000000
+ 1847   3890   00 00            .BYTE %00000000,%00000000
+ 1848   3892   03 C0            .BYTE %00000011,%11000000
+ 1849   3894   03 40            .BYTE %00000011,%01000000
+ 1850   3896   03 80            .BYTE %00000011,%10000000
+ 1851   3898   03 50            .BYTE %00000011,%01010000
+ 1852   389A   01 40            .BYTE %00000001,%01000000
+ 1853   389C   00 80            .BYTE %00000000,%10000000
+ 1854   389E   02 A0            .BYTE %00000010,%10100000
+ 1855   38A0   0A A0            .BYTE %00001010,%10100000
+ 1856   38A2   0A A0            .BYTE %00001010,%10100000
+ 1857   38A4   04 D0            .BYTE %00000100,%11010000
+ 1858   38A6   03 C0            .BYTE %00000011,%11000000
+ 1859   38A8   08 C0            .BYTE %00001000,%11000000
+ 1860   38AA   08 80            .BYTE %00001000,%10000000
+ 1861   38AC   08 A0            .BYTE %00001000,%10100000
+ 1862                           
+ 1863   38AE   00 00            .BYTE %00000000,%00000000
+ 1864   38B0   00 F0            .BYTE %00000000,%11110000
+ 1865   38B2   00 D0            .BYTE %00000000,%11010000
+ 1866   38B4   00 E0            .BYTE %00000000,%11100000
+ 1867   38B6   00 D4            .BYTE %00000000,%11010100
+ 1868   38B8   00 50            .BYTE %00000000,%01010000
+ 1869   38BA   00 20            .BYTE %00000000,%00100000
+ 1870   38BC   00 A8            .BYTE %00000000,%10101000
+ 1871   38BE   02 A8            .BYTE %00000010,%10101000
+ 1872   38C0   02 A8            .BYTE %00000010,%10101000
+ 1873   38C2   02 AA            .BYTE %00000010,%10101010
+ 1874   38C4   01 F1            .BYTE %00000001,%11110001
+ 1875   38C6   00 F0            .BYTE %00000000,%11110000
+ 1876   38C8   03 18            .BYTE %00000011,%00011000
+ 1877   38CA   02 08            .BYTE %00000010,%00001000
+ 1878   38CC   02 8A            .BYTE %00000010,%10001010
+ 1879                           
+ 1880   38CE   00 00            .BYTE %00000000,%00000000 ;Player left
+ 1881   38D0   00 00            .BYTE %00000000,%00000000
+ 1882   38D2   0F 00            .BYTE %00001111,%00000000
+ 1883   38D4   07 00            .BYTE %00000111,%00000000
+ 1884   38D6   0B 00            .BYTE %00001011,%00000000
+ 1885   38D8   17 00            .BYTE %00010111,%00000000
+ 1886   38DA   05 00            .BYTE %00000101,%00000000
+ 1887   38DC   08 00            .BYTE %00001000,%00000000
+ 1888   38DE   2A 00            .BYTE %00101010,%00000000
+ 1889   38E0   2A 80            .BYTE %00101010,%10000000
+ 1890   38E2   2A 80            .BYTE %00101010,%10000000
+ 1891   38E4   1F 40            .BYTE %00011111,%01000000
+ 1892   38E6   0F 00            .BYTE %00001111,%00000000
+ 1893   38E8   33 00            .BYTE %00110011,%00000000
+ 1894   38EA   22 00            .BYTE %00100010,%00000000
+ 1895   38EC   AA 00            .BYTE %10101010,%00000000
+ 1896                           
+ 1897   38EE   00 00            .BYTE %00000000,%00000000
+ 1898   38F0   03 C0            .BYTE %00000011,%11000000
+ 1899   38F2   01 C0            .BYTE %00000001,%11000000
+ 1900   38F4   02 C0            .BYTE %00000010,%11000000
+ 1901   38F6   05 C0            .BYTE %00000101,%11000000
+ 1902   38F8   01 40            .BYTE %00000001,%01000000
+ 1903   38FA   00 80            .BYTE %00000000,%10000000
+ 1904   38FC   02 A0            .BYTE %00000010,%10100000
+ 1905   38FE   02 A0            .BYTE %00000010,%10100000
+ 1906   3900   02 A0            .BYTE %00000010,%10100000
+ 1907   3902   02 A0            .BYTE %00000010,%10100000
+ 1908   3904   02 60            .BYTE %00000010,%01100000
+ 1909   3906   03 F0            .BYTE %00000011,%11110000
+ 1910   3908   00 C0            .BYTE %00000000,%11000000
+ 1911   390A   00 80            .BYTE %00000000,%10000000
+ 1912   390C   02 80            .BYTE %00000010,%10000000
+ 1913                           
+ 1914   390E   00 00            .BYTE %00000000,%00000000
+ 1915   3910   00 00            .BYTE %00000000,%00000000
+ 1916   3912   03 C0            .BYTE %00000011,%11000000
+ 1917   3914   01 C0            .BYTE %00000001,%11000000
+ 1918   3916   02 C0            .BYTE %00000010,%11000000
+ 1919   3918   05 C0            .BYTE %00000101,%11000000
+ 1920   391A   01 40            .BYTE %00000001,%01000000
+ 1921   391C   02 00            .BYTE %00000010,%00000000
+ 1922   391E   0A 80            .BYTE %00001010,%10000000
+ 1923   3920   0A A0            .BYTE %00001010,%10100000
+ 1924   3922   0A A0            .BYTE %00001010,%10100000
+ 1925   3924   07 D0            .BYTE %00000111,%11010000
+ 1926   3926   03 C0            .BYTE %00000011,%11000000
+ 1927   3928   03 20            .BYTE %00000011,%00100000
+ 1928   392A   02 20            .BYTE %00000010,%00100000
+ 1929   392C   0A 20            .BYTE %00001010,%00100000
+ 1930                           
+ 1931   392E   00 00            .BYTE %00000000,%00000000
+ 1932   3930   00 3C            .BYTE %00000000,%00111100
+ 1933   3932   00 1C            .BYTE %00000000,%00011100
+ 1934   3934   00 2C            .BYTE %00000000,%00101100
+ 1935   3936   00 5C            .BYTE %00000000,%01011100
+ 1936   3938   00 14            .BYTE %00000000,%00010100
+ 1937   393A   00 20            .BYTE %00000000,%00100000
+ 1938   393C   00 A8            .BYTE %00000000,%10101000
+ 1939   393E   00 AA            .BYTE %00000000,%10101010
+ 1940   3940   00 AA            .BYTE %00000000,%10101010
+ 1941   3942   02 AA            .BYTE %00000010,%10101010
+ 1942   3944   01 3D            .BYTE %00000001,%00111101
+ 1943   3946   00 3C            .BYTE %00000000,%00111100
+ 1944   3948   00 C3            .BYTE %00000000,%11000011
+ 1945   394A   00 82            .BYTE %00000000,%10000010
+ 1946   394C   02 8A            .BYTE %00000010,%10001010
+ 1947                           
+ 1948   394E   00 00            .BYTE %00000000,%00000000 ;Worm (enemy) left
+ 1949   3950   00 00            .BYTE %00000000,%00000000
+ 1950   3952   00 00            .BYTE %00000000,%00000000
+ 1951   3954   00 00            .BYTE %00000000,%00000000
+ 1952   3956   00 00            .BYTE %00000000,%00000000
+ 1953   3958   00 00            .BYTE %00000000,%00000000
+ 1954   395A   00 00            .BYTE %00000000,%00000000
+ 1955   395C   00 00            .BYTE %00000000,%00000000
+ 1956   395E   00 00            .BYTE %00000000,%00000000
+ 1957   3960   00 00            .BYTE %00000000,%00000000
+ 1958   3962   00 00            .BYTE %00000000,%00000000
+ 1959   3964   3E 00            .BYTE %00111110,%00000000
+ 1960   3966   3E 00            .BYTE %00111110,%00000000
+ 1961   3968   FF 00            .BYTE %11111111,%00000000
+ 1962   396A   FF 00            .BYTE %11111111,%00000000
+ 1963   396C   FF 00            .BYTE %11111111,%00000000
+ 1964                           
+ 1965   396E   00 00            .BYTE %00000000,%00000000
+ 1966   3970   00 00            .BYTE %00000000,%00000000
+ 1967   3972   00 00            .BYTE %00000000,%00000000
+ 1968   3974   00 00            .BYTE %00000000,%00000000
+ 1969   3976   00 00            .BYTE %00000000,%00000000
+ 1970   3978   00 00            .BYTE %00000000,%00000000
+ 1971   397A   00 00            .BYTE %00000000,%00000000
+ 1972   397C   00 00            .BYTE %00000000,%00000000
+ 1973   397E   00 00            .BYTE %00000000,%00000000
+ 1974   3980   00 00            .BYTE %00000000,%00000000
+ 1975   3982   00 00            .BYTE %00000000,%00000000
+ 1976   3984   00 00            .BYTE %00000000,%00000000
+ 1977   3986   0F 20            .BYTE %00001111,%00100000
+ 1978   3988   3F E0            .BYTE %00111111,%11100000
+ 1979   398A   FF F0            .BYTE %11111111,%11110000
+ 1980   398C   F0 F0            .BYTE %11110000,%11110000
+ 1981                           
+ 1982   398E   00 00            .BYTE %00000000,%00000000
+ 1983   3990   00 00            .BYTE %00000000,%00000000
+ 1984   3992   00 00            .BYTE %00000000,%00000000
+ 1985   3994   00 00            .BYTE %00000000,%00000000
+ 1986   3996   00 00            .BYTE %00000000,%00000000
+ 1987   3998   00 00            .BYTE %00000000,%00000000
+ 1988   399A   00 00            .BYTE %00000000,%00000000
+ 1989   399C   00 00            .BYTE %00000000,%00000000
+ 1990   399E   00 00            .BYTE %00000000,%00000000
+ 1991   39A0   00 00            .BYTE %00000000,%00000000
+ 1992   39A2   00 00            .BYTE %00000000,%00000000
+ 1993   39A4   00 00            .BYTE %00000000,%00000000
+ 1994   39A6   00 00            .BYTE %00000000,%00000000
+ 1995   39A8   3F FE            .BYTE %00111111,%11111110
+ 1996   39AA   FF FF            .BYTE %11111111,%11111111
+ 1997   39AC   FF FF            .BYTE %11111111,%11111111
+ 1998                           
+ 1999   39AE   00 00            .BYTE %00000000,%00000000
+ 2000   39B0   00 00            .BYTE %00000000,%00000000
+ 2001   39B2   00 00            .BYTE %00000000,%00000000
+ 2002   39B4   00 00            .BYTE %00000000,%00000000
+ 2003   39B6   00 00            .BYTE %00000000,%00000000
+ 2004   39B8   00 00            .BYTE %00000000,%00000000
+ 2005   39BA   00 00            .BYTE %00000000,%00000000
+ 2006   39BC   00 00            .BYTE %00000000,%00000000
+ 2007   39BE   00 00            .BYTE %00000000,%00000000
+ 2008   39C0   00 00            .BYTE %00000000,%00000000
+ 2009   39C2   00 00            .BYTE %00000000,%00000000
+ 2010   39C4   00 00            .BYTE %00000000,%00000000
+ 2011   39C6   00 F2            .BYTE %00000000,%11110010
+ 2012   39C8   03 FE            .BYTE %00000011,%11111110
+ 2013   39CA   0F FF            .BYTE %00001111,%11111111
+ 2014   39CC   0F 0F            .BYTE %00001111,%00001111
+ 2015                           
+ 2016   39CE   00 00            .BYTE %00000000,%00000000 ;Worm right
+ 2017   39D0   00 00            .BYTE %00000000,%00000000
+ 2018   39D2   00 00            .BYTE %00000000,%00000000
+ 2019   39D4   00 00            .BYTE %00000000,%00000000
+ 2020   39D6   00 00            .BYTE %00000000,%00000000
+ 2021   39D8   00 00            .BYTE %00000000,%00000000
+ 2022   39DA   00 00            .BYTE %00000000,%00000000
+ 2023   39DC   00 00            .BYTE %00000000,%00000000
+ 2024   39DE   00 00            .BYTE %00000000,%00000000
+ 2025   39E0   00 00            .BYTE %00000000,%00000000
+ 2026   39E2   00 00            .BYTE %00000000,%00000000
+ 2027   39E4   00 00            .BYTE %00000000,%00000000
+ 2028   39E6   8F 00            .BYTE %10001111,%00000000
+ 2029   39E8   BF C0            .BYTE %10111111,%11000000
+ 2030   39EA   FF F0            .BYTE %11111111,%11110000
+ 2031   39EC   F0 F0            .BYTE %11110000,%11110000
+ 2032                           
+ 2033   39EE   00 00            .BYTE %00000000,%00000000
+ 2034   39F0   00 00            .BYTE %00000000,%00000000
+ 2035   39F2   00 00            .BYTE %00000000,%00000000
+ 2036   39F4   00 00            .BYTE %00000000,%00000000
+ 2037   39F6   00 00            .BYTE %00000000,%00000000
+ 2038   39F8   00 00            .BYTE %00000000,%00000000
+ 2039   39FA   00 00            .BYTE %00000000,%00000000
+ 2040   39FC   00 00            .BYTE %00000000,%00000000
+ 2041   39FE   00 00            .BYTE %00000000,%00000000
+ 2042   3A00   00 00            .BYTE %00000000,%00000000
+ 2043   3A02   00 00            .BYTE %00000000,%00000000
+ 2044   3A04   00 00            .BYTE %00000000,%00000000
+ 2045   3A06   80 00            .BYTE %10000000,%00000000
+ 2046   3A08   BF FC            .BYTE %10111111,%11111100
+ 2047   3A0A   FF FF            .BYTE %11111111,%11111111
+ 2048   3A0C   FF FF            .BYTE %11111111,%11111111
+ 2049                           
+ 2050   3A0E   00 00            .BYTE %00000000,%00000000
+ 2051   3A10   00 00            .BYTE %00000000,%00000000
+ 2052   3A12   00 00            .BYTE %00000000,%00000000
+ 2053   3A14   00 00            .BYTE %00000000,%00000000
+ 2054   3A16   00 00            .BYTE %00000000,%00000000
+ 2055   3A18   00 00            .BYTE %00000000,%00000000
+ 2056   3A1A   00 00            .BYTE %00000000,%00000000
+ 2057   3A1C   00 00            .BYTE %00000000,%00000000
+ 2058   3A1E   00 00            .BYTE %00000000,%00000000
+ 2059   3A20   00 00            .BYTE %00000000,%00000000
+ 2060   3A22   00 00            .BYTE %00000000,%00000000
+ 2061   3A24   00 00            .BYTE %00000000,%00000000
+ 2062   3A26   08 F0            .BYTE %00001000,%11110000
+ 2063   3A28   0B FC            .BYTE %00001011,%11111100
+ 2064   3A2A   0F FF            .BYTE %00001111,%11111111
+ 2065   3A2C   0F 0F            .BYTE %00001111,%00001111
+ 2066                           
+ 2067   3A2E   00 00            .BYTE %00000000,%00000000
+ 2068   3A30   00 00            .BYTE %00000000,%00000000
+ 2069   3A32   00 00            .BYTE %00000000,%00000000
+ 2070   3A34   00 00            .BYTE %00000000,%00000000
+ 2071   3A36   00 00            .BYTE %00000000,%00000000
+ 2072   3A38   00 00            .BYTE %00000000,%00000000
+ 2073   3A3A   00 00            .BYTE %00000000,%00000000
+ 2074   3A3C   00 00            .BYTE %00000000,%00000000
+ 2075   3A3E   00 00            .BYTE %00000000,%00000000
+ 2076   3A40   00 00            .BYTE %00000000,%00000000
+ 2077   3A42   00 3C            .BYTE %00000000,%00111100
+ 2078   3A44   00 BC            .BYTE %00000000,%10111100
+ 2079   3A46   00 BC            .BYTE %00000000,%10111100
+ 2080   3A48   00 FF            .BYTE %00000000,%11111111
+ 2081   3A4A   00 FF            .BYTE %00000000,%11111111
+ 2082   3A4C   00 FF            .BYTE %00000000,%11111111
+ 2083                           
+ 2084                           
+ 2085                           
+ 2086   3A4E                                   include levels.inc
+ 2087   3A4E   D63A 5E3A        levtab: .WORD levv1,lev1h ;Level address tables - first word compressed data
+ 2088   3A52   173B 7C3A                .WORD levv2,lev2h ;second word is header
+ 2089   3A56   493B 9A3A                .WORD levv3,lev3h
+ 2090   3A5A   883B B83A                .WORD levv4,lev4h
+ 2091                           
+ 2092                           ;Levels - headers first
+ 2093   3A5E   0F 00 01 10 0B   lev1h:  .BYTE 15,0,1,16,11,2,30,16
+        3A63   02 1E 10 
+ 2094   3A66   01 11                    .BYTE 1,17
+ 2095                           
+ 2096   3A68   70 88 70 EE 00           .BYTE 112,136,112,238,0
+ 2097   3A6D   00 C8 01 EE FF           .BYTE 0,200,1,238,255
+ 2098   3A72   00 C8 01 EE FF           .BYTE 0,200,1,238,255
+ 2099   3A77   00 C8 01 EE FF           .BYTE 0,200,1,238,255
+ 2100                           
+ 2101   3A7C   01 04 1E 04 1E   lev2h:  .BYTE 1,4,30,4,30,16,16,4
+        3A81   10 10 04 
+ 2102   3A84   1D 0B                    .BYTE 29,11
+ 2103                           
+ 2104   3A86   40 88 08 E8 01           .BYTE 64,136,8,232,1
+ 2105   3A8B   48 28 48 70 00           .BYTE 72,40,72,112,0
+ 2106   3A90   80 28 80 A8 00           .BYTE 128,40,128,168,0
+ 2107   3A95   C0 28 C0 E8 00           .BYTE 192,40,192,232,0
+ 2108                           
+ 2109   3A9A   01 00 1E 00 01   lev3h:  .BYTE 1,0,30,0,1,6,30,6
+        3A9F   06 1E 06 
+ 2110   3AA2   1D 11                    .BYTE 29,17
+ 2111                           
+ 2112   3AA4   08 18 08 40 00           .BYTE 8,24,8,64,0
+ 2113   3AA9   08 48 08 40 00           .BYTE 8,72,8,64,0
+ 2114   3AAE   E8 18 B0 E8 01           .BYTE 232,24,176,232,1
+ 2115   3AB3   E8 48 B0 E8 01           .BYTE 232,72,176,232,1
+ 2116                           
+ 2117   3AB8   01 03 1E 03 0E   lev4h:  .BYTE 1,3,30,3,14,3,17,3
+        3ABD   03 11 03 
+ 2118   3AC0   1D 11                    .BYTE 29,17
+ 2119                           
+ 2120   3AC2   30 60 30 58 00           .BYTE 48,96,48,88,0
+ 2121   3AC7   88 60 68 88 01           .BYTE 136,96,104,136,1
+ 2122   3ACC   98 60 98 C0 00           .BYTE 152,96,152,192,0
+ 2123   3AD1   30 80 30 C0 00           .BYTE 48,128,48,192,0
+ 2124                           
+ 2125                           ;Then compressed data
+ 2126                           ;Compression format is :
+ 2127                           ; bits 0-1 - block type (0=air, 1=floor, 2=wall, 3=spike)
+ 2128                           ; bits 2-7 - block count minus 1
+ 2129                           ;255 marks the end of level data
+ 2130                           ;Levels are 32x20 blocks
+ 2131                           
+ 2132   3AD6   06               levv1:   .BYTE 6
+ 2133   3AD7   78               .BYTE 120
+ 2134   3AD8   0A               .BYTE 10
+ 2135   3AD9   78               .BYTE 120
+ 2136   3ADA   0A               .BYTE 10
+ 2137   3ADB   78               .BYTE 120
+ 2138   3ADC   0A               .BYTE 10
+ 2139   3ADD   3C               .BYTE 60
+ 2140   3ADE   0E               .BYTE 14
+ 2141   3ADF   30               .BYTE 48
+ 2142   3AE0   0A               .BYTE 10
+ 2143   3AE1   28               .BYTE 40
+ 2144   3AE2   16               .BYTE 22
+ 2145   3AE3   3C               .BYTE 60
+ 2146   3AE4   0A               .BYTE 10
+ 2147   3AE5   78               .BYTE 120
+ 2148   3AE6   0A               .BYTE 10
+ 2149   3AE7   78               .BYTE 120
+ 2150   3AE8   0A               .BYTE 10
+ 2151   3AE9   20               .BYTE 32
+ 2152   3AEA   25               .BYTE 37
+ 2153   3AEB   34               .BYTE 52
+ 2154   3AEC   0A               .BYTE 10
+ 2155   3AED   54               .BYTE 84
+ 2156   3AEE   07               .BYTE 7
+ 2157   3AEF   20               .BYTE 32
+ 2158   3AF0   0A               .BYTE 10
+ 2159   3AF1   40               .BYTE 64
+ 2160   3AF2   0D               .BYTE 13
+ 2161   3AF3   08               .BYTE 8
+ 2162   3AF4   06               .BYTE 6
+ 2163   3AF5   20               .BYTE 32
+ 2164   3AF6   0A               .BYTE 10
+ 2165   3AF7   54               .BYTE 84
+ 2166   3AF8   06               .BYTE 6
+ 2167   3AF9   20               .BYTE 32
+ 2168   3AFA   0A               .BYTE 10
+ 2169   3AFB   44               .BYTE 68
+ 2170   3AFC   21               .BYTE 33
+ 2171   3AFD   14               .BYTE 20
+ 2172   3AFE   0A               .BYTE 10
+ 2173   3AFF   78               .BYTE 120
+ 2174   3B00   0A               .BYTE 10
+ 2175   3B01   3C               .BYTE 60
+ 2176   3B02   05               .BYTE 5
+ 2177   3B03   38               .BYTE 56
+ 2178   3B04   0A               .BYTE 10
+ 2179   3B05   2C               .BYTE 44
+ 2180   3B06   05               .BYTE 5
+ 2181   3B07   48               .BYTE 72
+ 2182   3B08   0A               .BYTE 10
+ 2183   3B09   78               .BYTE 120
+ 2184   3B0A   0A               .BYTE 10
+ 2185   3B0B   1C               .BYTE 28
+ 2186   3B0C   05               .BYTE 5
+ 2187   3B0D   58               .BYTE 88
+ 2188   3B0E   0A               .BYTE 10
+ 2189   3B0F   78               .BYTE 120
+ 2190   3B10   0A               .BYTE 10
+ 2191   3B11   10               .BYTE 16
+ 2192   3B12   07               .BYTE 7
+ 2193   3B13   64               .BYTE 100
+ 2194   3B14   06               .BYTE 6
+ 2195   3B15   81               .BYTE 125+4
+ 2196   3B16   FF               .BYTE $FF
+ 2197                           
+ 2198   3B17   06               levv2: .BYTE 6
+ 2199   3B18   78               .BYTE 120
+ 2200   3B19   0A               .BYTE 10
+ 2201   3B1A   78               .BYTE 120
+ 2202   3B1B   0A               .BYTE 10
+ 2203   3B1C   78               .BYTE 120
+ 2204   3B1D   0A               .BYTE 10
+ 2205   3B1E   78               .BYTE 120
+ 2206   3B1F   0A               .BYTE 10
+ 2207   3B20   78               .BYTE 120
+ 2208   3B21   0A               .BYTE 10
+ 2209   3B22   78               .BYTE 120
+ 2210   3B23   0A               .BYTE 10
+ 2211   3B24   78               .BYTE 120
+ 2212   3B25   0A               .BYTE 10
+ 2213   3B26   15               .BYTE 21
+ 2214   3B27   0C               .BYTE 12
+ 2215   3B28   59               .BYTE 89
+ 2216   3B29   0A               .BYTE 10
+ 2217   3B2A   78               .BYTE 120
+ 2218   3B2B   0A               .BYTE 10
+ 2219   3B2C   78               .BYTE 120
+ 2220   3B2D   0A               .BYTE 10
+ 2221   3B2E   14               .BYTE 20
+ 2222   3B2F   0D               .BYTE 13
+ 2223   3B30   58               .BYTE 88
+ 2224   3B31   0A               .BYTE 10
+ 2225   3B32   78               .BYTE 120
+ 2226   3B33   0A               .BYTE 10
+ 2227   3B34   78               .BYTE 120
+ 2228   3B35   0A               .BYTE 10
+ 2229   3B36   20               .BYTE 32
+ 2230   3B37   11               .BYTE 17
+ 2231   3B38   30               .BYTE 48
+ 2232   3B39   19               .BYTE 25
+ 2233   3B3A   0A               .BYTE 10
+ 2234   3B3B   78               .BYTE 120
+ 2235   3B3C   0A               .BYTE 10
+ 2236   3B3D   78               .BYTE 120
+ 2237   3B3E   0A               .BYTE 10
+ 2238   3B3F   0C               .BYTE 12
+ 2239   3B40   51               .BYTE 81
+ 2240   3B41   1C               .BYTE 28
+ 2241   3B42   0A               .BYTE 10
+ 2242   3B43   78               .BYTE 120
+ 2243   3B44   0A               .BYTE 10
+ 2244   3B45   78               .BYTE 120
+ 2245   3B46   06               .BYTE 6
+ 2246   3B47   81               .BYTE 125+4
+ 2247   3B48   FF               .BYTE $FF
+ 2248                           
+ 2249   3B49   06               levv3: .BYTE 6
+ 2250   3B4A   78               .BYTE 120
+ 2251   3B4B   0A               .BYTE 10
+ 2252   3B4C   78               .BYTE 120
+ 2253   3B4D   0A               .BYTE 10
+ 2254   3B4E   78               .BYTE 120
+ 2255   3B4F   0A               .BYTE 10
+ 2256   3B50   78               .BYTE 120
+ 2257   3B51   0A               .BYTE 10
+ 2258   3B52   78               .BYTE 120
+ 2259   3B53   0A               .BYTE 10
+ 2260   3B54   25               .BYTE 37
+ 2261   3B55   30               .BYTE 48
+ 2262   3B56   25               .BYTE 37
+ 2263   3B57   0A               .BYTE 10
+ 2264   3B58   78               .BYTE 120
+ 2265   3B59   0A               .BYTE 10
+ 2266   3B5A   78               .BYTE 120
+ 2267   3B5B   0A               .BYTE 10
+ 2268   3B5C   2C               .BYTE 44
+ 2269   3B5D   09               .BYTE 9
+ 2270   3B5E   10               .BYTE 16
+ 2271   3B5F   0D               .BYTE 13
+ 2272   3B60   28               .BYTE 40
+ 2273   3B61   0A               .BYTE 10
+ 2274   3B62   28               .BYTE 40
+ 2275   3B63   05               .BYTE 5
+ 2276   3B64   4C               .BYTE 76
+ 2277   3B65   0A               .BYTE 10
+ 2278   3B66   78               .BYTE 120
+ 2279   3B67   0A               .BYTE 10
+ 2280   3B68   25               .BYTE 37
+ 2281   3B69   30               .BYTE 48
+ 2282   3B6A   25               .BYTE 37
+ 2283   3B6B   0A               .BYTE 10
+ 2284   3B6C   78               .BYTE 120
+ 2285   3B6D   0A               .BYTE 10
+ 2286   3B6E   30               .BYTE 48
+ 2287   3B6F   05               .BYTE 5
+ 2288   3B70   20               .BYTE 32
+ 2289   3B71   05               .BYTE 5
+ 2290   3B72   20               .BYTE 32
+ 2291   3B73   0A               .BYTE 10
+ 2292   3B74   48               .BYTE 72
+ 2293   3B75   05               .BYTE 5
+ 2294   3B76   2C               .BYTE 44
+ 2295   3B77   0A               .BYTE 10
+ 2296   3B78   3C               .BYTE 60
+ 2297   3B79   05               .BYTE 5
+ 2298   3B7A   38               .BYTE 56
+ 2299   3B7B   0A               .BYTE 10
+ 2300   3B7C   30               .BYTE 48
+ 2301   3B7D   05               .BYTE 5
+ 2302   3B7E   44               .BYTE 68
+ 2303   3B7F   0A               .BYTE 10
+ 2304   3B80   24               .BYTE 36
+ 2305   3B81   05               .BYTE 5
+ 2306   3B82   50               .BYTE 80
+ 2307   3B83   0A               .BYTE 10
+ 2308   3B84   78               .BYTE 120
+ 2309   3B85   06               .BYTE 6
+ 2310   3B86   81               .BYTE 125+4
+ 2311   3B87   FF               .BYTE $FF
+ 2312                           
+ 2313   3B88   06               levv4: .BYTE 6
+ 2314   3B89   78               .BYTE 120
+ 2315   3B8A   0A               .BYTE 10
+ 2316   3B8B   78               .BYTE 120
+ 2317   3B8C   0A               .BYTE 10
+ 2318   3B8D   78               .BYTE 120
+ 2319   3B8E   0A               .BYTE 10
+ 2320   3B8F   78               .BYTE 120
+ 2321   3B90   0A               .BYTE 10
+ 2322   3B91   78               .BYTE 120
+ 2323   3B92   0A               .BYTE 10
+ 2324   3B93   11               .BYTE 17
+ 2325   3B94   28               .BYTE 40
+ 2326   3B95   0B               .BYTE 11
+ 2327   3B96   28               .BYTE 40
+ 2328   3B97   11               .BYTE 17
+ 2329   3B98   0A               .BYTE 10
+ 2330   3B99   30               .BYTE 48
+ 2331   3B9A   19               .BYTE 25
+ 2332   3B9B   30               .BYTE 48
+ 2333   3B9C   0A               .BYTE 10
+ 2334   3B9D   78               .BYTE 120
+ 2335   3B9E   0A               .BYTE 10
+ 2336   3B9F   14               .BYTE 20
+ 2337   3BA0   09               .BYTE 9
+ 2338   3BA1   14               .BYTE 20
+ 2339   3BA2   05               .BYTE 5
+ 2340   3BA3   10               .BYTE 16
+ 2341   3BA4   05               .BYTE 5
+ 2342   3BA5   14               .BYTE 20
+ 2343   3BA6   09               .BYTE 9
+ 2344   3BA7   14               .BYTE 20
+ 2345   3BA8   0A               .BYTE 10
+ 2346   3BA9   78               .BYTE 120
+ 2347   3BAA   0A               .BYTE 10
+ 2348   3BAB   78               .BYTE 120
+ 2349   3BAC   0A               .BYTE 10
+ 2350   3BAD   20               .BYTE 32
+ 2351   3BAE   05               .BYTE 5
+ 2352   3BAF   08               .BYTE 8
+ 2353   3BB0   05               .BYTE 5
+ 2354   3BB1   1C               .BYTE 28
+ 2355   3BB2   05               .BYTE 5
+ 2356   3BB3   08               .BYTE 8
+ 2357   3BB4   05               .BYTE 5
+ 2358   3BB5   1C               .BYTE 28
+ 2359   3BB6   0A               .BYTE 10
+ 2360   3BB7   78               .BYTE 120
+ 2361   3BB8   0A               .BYTE 10
+ 2362   3BB9   78               .BYTE 120
+ 2363   3BBA   0A               .BYTE 10
+ 2364   3BBB   14               .BYTE 20
+ 2365   3BBC   51               .BYTE 81
+ 2366   3BBD   14               .BYTE 20
+ 2367   3BBE   0A               .BYTE 10
+ 2368   3BBF   78               .BYTE 120
+ 2369   3BC0   0A               .BYTE 10
+ 2370   3BC1   10               .BYTE 16
+ 2371   3BC2   05               .BYTE 5
+ 2372   3BC3   50               .BYTE 80
+ 2373   3BC4   05               .BYTE 5
+ 2374   3BC5   10               .BYTE 16
+ 2375   3BC6   0A               .BYTE 10
+ 2376   3BC7   78               .BYTE 120
+ 2377   3BC8   0A               .BYTE 10
+ 2378   3BC9   14               .BYTE 20
+ 2379   3BCA   53               .BYTE 83
+ 2380   3BCB   14               .BYTE 20
+ 2381   3BCC   06               .BYTE 6
+ 2382   3BCD   81               .BYTE 125+4
+ 2383   3BCE   FF               .BYTE $FF
+ 2384                           
+ 2385   3BCF                    eind_asm
+
+
+
+           Lines Assembled :  2385             Assembly Errors :  0
+
+
+

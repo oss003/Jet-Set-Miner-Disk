@@ -1,0 +1,33 @@
+
+                   6502 Macro Assembler   -   Version 4.00f 
+                Copyright (C) 1985 by 2500 A.D. Software, Inc.
+
+
+                         ***** Active Commands *****
+
+                           Ctrl S = Stop Output
+                           Ctrl Q = Start Output
+                           Esc  C = Stop Assembly
+                           Esc  T = Terminal Output
+                           Esc  P = Printer Output
+                           Esc  D = Disk Output
+                           Esc  M = Multiple Output
+                           Esc  N = No Output
+
+
+
+
+               2500 A.D. 6502 Macro Assembler  -  Version 4.00f
+               ------------------------------------------------
+
+                       Input  Filename : jsm-mon.asm
+                       Output Filename : jsm-mon.obj
+
+
+
+
+
+           Lines Assembled :  2378             Assembly Errors :  0
+
+
+
